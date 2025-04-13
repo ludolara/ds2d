@@ -6,12 +6,15 @@ from sklearn.model_selection import train_test_split
 from shapely import Polygon
 from shapely.geometry import LineString
 from shapely.ops import polygonize
+from shapely.affinity import scale
 
 class RPLANConverter:
     def __init__(self, round_value: int = 1):
         original_map = {"living_room": 1, "kitchen": 2, "bedroom": 3, "bathroom": 4, "balcony": 5, "entrance": 6, "dining_room": 7, "study_room": 8, "storage": 10 , "front_door": 15, "unknown": 16, "interior_door": 17}
         self.room_map = {code: name for name, code in original_map.items()}
         self.round_value = round_value
+        # Each floor plan is represented as vector graphics in an 18m x 18m square and converted into a 256x256 image 
+        self.pixel_to_meter = 18 / 256
 
     def _map_room_type(self, code: int) -> str:
         return self.room_map.get(code, str(code))
@@ -32,44 +35,6 @@ class RPLANConverter:
         rooms = []
         total_area = 0.0
 
-        # for room_idx in range(len(data["room_type"])):
-        #     room = {
-        #         "id": room_idx,              
-        #         "room_type": self._map_room_type(data["room_type"][room_idx]),
-        #         "segments": [],
-        #         "floor_polygon": []
-        #     }
-        #     rooms.append(room)
-
-        # for edge_idx, edge in enumerate(data["edges"]):
-        #     associated_room_indices = data["ed_rm"][edge_idx]
-        #     polygone = []
-        #     for room_idx in associated_room_indices:
-        #         coords = edge[:4]
-        #         rooms[room_idx]["segments"].append(coords)
-
-        # for room in rooms:
-        #     if len(room["segments"]) > 0:
-        #         poly = self._segments_to_polygon(room["segments"])
-        #         area = round(poly.area, self.round_value)
-        #         minx, miny, maxx, maxy = poly.bounds
-        #         width  = round(maxx - minx, self.round_value)
-        #         height = round(maxy - miny, self.round_value)
-        #         is_rectangular = 1 if len(poly.exterior.coords) - 1 == 4 else 0
-        #         floor_polygon = [
-        #             {'x': round(x, self.round_value), 'y': round(y, self.round_value)}
-        #             for x, y in poly.exterior.coords[:-1]
-        #         ]
-
-        #         total_area += area
-        #         del room["segments"]
-
-        #         room["area"] = area
-        #         room["width"] = width
-        #         room["height"] = height
-        #         room["is_regular"] = is_rectangular
-        #         room["floor_polygon"] = floor_polygon
-
         rooms = [{
             "id": i,
             "room_type": self._map_room_type(rt),
@@ -85,6 +50,8 @@ class RPLANConverter:
             segments = room.pop("segments", [])
             if segments:
                 poly = self._segments_to_polygon(segments)
+                poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0, 0))
+
                 area = round(poly.area, self.round_value)
                 minx, miny, maxx, maxy = poly.bounds
                 room.update({
@@ -134,4 +101,5 @@ if __name__ == "__main__":
     rplan_json = "datasets/rplan_json_test"
     converter = RPLANConverter()
     dataset = converter(rplan_json) 
-    print(dataset['train'][0])
+    print(dataset['test'][0])
+
