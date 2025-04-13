@@ -49,9 +49,9 @@ class FloorplanGenerator:
         )
         self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto")
         self.model.eval()
-        self.model.half()
-        # if hasattr(torch, 'compile'):
-        #     self.model = torch.compile(self.model)
+        # self.model.half()
+        if hasattr(torch, 'compile'):
+            self.model = torch.compile(self.model, mode='reduce-overhead')
 
         # self.dataset = load_dataset("ludolara/DStruct2Design")[self.test_split]
         self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
