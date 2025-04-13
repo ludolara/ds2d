@@ -15,7 +15,7 @@ def create_input(sample):
                 }
                 for room in sample.get("rooms", [])
             ],
-            # "edges": sample.get("edges", [])
+            "edges": sample.get("edges", [])
         }
     }
     return str(inp)
@@ -27,11 +27,11 @@ def create_output(sample):
     return str(output)
 
 def get_custom_dataset(dataset_config, tokenizer, split):
-    # rplan = load_from_disk('datasets/rplan_converted_10k')[split]
-    procthor = load_from_disk('datasets/DStruct2Design-nightly')[split]
-
+    rplan = load_from_disk('datasets/rplan_converted')[split]
+    # procthor = load_from_disk('datasets/DStruct2Design-nightly')[split]
     # dataset = concatenate_datasets([rplan, procthor])
-    dataset = concatenate_datasets([procthor])
+
+    dataset = concatenate_datasets([rplan])
     dataset = dataset.shuffle(seed=42)
 
     def process_sample(sample):
