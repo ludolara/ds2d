@@ -21,7 +21,7 @@ schema = {
         "additionalProperties": False,
         "properties": {
           "id": {
-            "type": "string"
+            "type": ["string", "integer"]
           },
           "room_type": {
             "type": "string"

@@ -2,9 +2,10 @@ import os
 import json
 from tqdm import tqdm
 from dotenv import load_dotenv
-from .feedback_generator import FeedbackGenerator
+from src.utils import create_input
+from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 from datasets import load_from_disk
 import torch
@@ -43,17 +44,21 @@ class FloorplanGenerator:
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name_or_path,
-            load_in_8bit=True,
             device_map="auto",
-            cache_dir=CACHE_DIR
+            cache_dir=CACHE_DIR,
+            quantization_config=BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4"
+            )
         )
         self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto")
         self.model.eval()
-        # self.model.half()
+
         if hasattr(torch, 'compile'):
             self.model = torch.compile(self.model, mode='reduce-overhead')
 
-        # self.dataset = load_dataset("ludolara/DStruct2Design")[self.test_split]
         self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
         if test_range:
             try:
@@ -65,27 +70,6 @@ class FloorplanGenerator:
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def _create_input(self, sample, is_str=True):
-        inp = {
-            "room_count": sample.get("room_count"),
-            "total_area": sample.get("total_area"),
-            "room_types": sample.get("room_types"),
-            "rooms": [
-                {
-                    "room_type": room.get("room_type"),
-                    "width": room.get("width"),
-                    "height": room.get("height"),
-                    "is_regular": room.get("is_regular"),
-                }
-                for room in sample.get("rooms", [])
-            ],
-            # "edges": sample.get("edges", []),
-        }
-        if is_str:
-            return str({"input": inp})
-        else:
-            return inp
-
     def _build_prompt(self, sample):
         system_prompt = (
             "you are to generate a floor plan in a JSON structure. "
@@ -96,7 +80,7 @@ class FloorplanGenerator:
         prompt = (
             f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
             f"{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-            f"{self._create_input(sample)}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+            f"{create_input(sample)}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
         )
         return prompt
 
@@ -124,7 +108,7 @@ class FloorplanGenerator:
         re_prompt = (
             f"{system_prompt}"
             f"{history_prompt}"
-            f"<|eot_id|><|start_header_id|>user<|end_header_id|>\n{self._create_input(sample)}"
+            f"<|eot_id|><|start_header_id|>user<|end_header_id|>\n{create_input(sample)}"
             f"<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
         )
 
@@ -137,7 +121,7 @@ class FloorplanGenerator:
             prompts = [self._build_prompt(sample) for sample in samples]
 
             inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            inputs = {k: v.to(self.device, dtype=torch.float16) for k, v in inputs.items()}
             with torch.no_grad():
                 outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
 
@@ -151,7 +135,7 @@ class FloorplanGenerator:
 
                 prompt_path = os.path.join(sample_dir, "prompt.json")
                 with open(prompt_path, "w", encoding="utf-8") as f:
-                    json.dump(self._create_input(samples[idx], is_str=False), f, indent=4)
+                    json.dump(create_input(samples[idx], is_str=False), f, indent=4)
 
                 output_path = os.path.join(sample_dir, "0.json")
                 with open(output_path, "w", encoding="utf-8") as f:
@@ -175,7 +159,7 @@ class FloorplanGenerator:
                 inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True)
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 with torch.no_grad():
-                    with torch.amp.autocast(self.device):
+                    with torch.amp.autocast(self.device, dtype=torch.bfloat16):
                         outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
 
                 for pos, idx in enumerate(unresolved_indices):
@@ -187,7 +171,7 @@ class FloorplanGenerator:
                     os.makedirs(sample_dir, exist_ok=True)
                     os.makedirs(sample_dir_feedback, exist_ok=True)
 
-                    input_prompt = self._create_input(samples[idx], is_str=False)
+                    input_prompt = create_input(samples[idx], is_str=False)
                     with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
                         json.dump(input_prompt, f, indent=4)
                     with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:
