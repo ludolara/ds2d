@@ -1,23 +1,21 @@
-import argparse
 import os
 import json
 from tqdm import tqdm
 from dotenv import load_dotenv
-from pred.feedback_generator import FeedbackGenerator
-from src.pred import extract_output_json
+from .feedback_generator import FeedbackGenerator
+from src.pred.extract_output_json import extract_output_json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
-from datasets import load_dataset
-from shapely.geometry import Polygon
+from datasets import load_from_disk
 import torch
 
 load_dotenv()
 CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE")
     
-class FloorPlanGenerator:
+class FloorplanGenerator:
     def __init__(
         self,
-        model_name_or_path="meta-llama/Llama-3.1-8B-Instruct",
+        model_name_or_path="meta-llama/Llama-3.3-70B-Instruct",
         lora_adapter_path=None,
         test_split="test",
         test_range=None,
@@ -52,8 +50,11 @@ class FloorPlanGenerator:
         self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto")
         self.model.eval()
         self.model.half()
+        # if hasattr(torch, 'compile'):
+        #     self.model = torch.compile(self.model)
 
-        self.dataset = load_dataset("ludolara/DStruct2Design")[self.test_split]
+        # self.dataset = load_dataset("ludolara/DStruct2Design")[self.test_split]
+        self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
         if test_range:
             try:
                 self.test_range_start, self.test_range_end = map(int, test_range.split(","))
@@ -217,7 +218,7 @@ class FloorPlanGenerator:
                             history=histories[idx]
                         )
                         current_prompts[idx] = new_prompt
-                        # print(new_prompt)
+                        print(new_prompt)
                     
                     with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
                         filtered_history = [

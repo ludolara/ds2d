@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv
 from shapely.geometry import Polygon
 from src.utils.json_check.verify import is_valid_json_feedback
 

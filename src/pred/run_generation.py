@@ -1,5 +1,5 @@
 import argparse
-from pred.floorplan_generator import FloorPlanGenerator
+from src.pred.floorplan_generator import FloorplanGenerator
     
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -16,7 +16,7 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    generator = FloorPlanGenerator(
+    generator = FloorplanGenerator(
         model_name_or_path=args.model_name_or_path,
         lora_adapter_path=args.lora_adapter_path,
         test_split=args.test_split,
