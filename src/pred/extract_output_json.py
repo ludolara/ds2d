@@ -29,11 +29,11 @@ def extract_output_json(input_str: str):
         except Exception:
             parsed_json = {}
 
-    if isinstance(parsed_json, list):
-        parsed_json = {"rooms": parsed_json}
-    elif isinstance(parsed_json, dict) and "output" in parsed_json:
+    if isinstance(parsed_json, dict) and "output" in parsed_json:
         return parsed_json["output"]
     elif isinstance(parsed_json, dict) and "floor_plan" in parsed_json:
         return parsed_json["floor_plan"]
+    elif isinstance(parsed_json, list):
+        return {"rooms": parsed_json}
     
     return parsed_json

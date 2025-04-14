@@ -9,6 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 from datasets import load_from_disk
 import torch
+import time
 
 load_dotenv()
 CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE")
@@ -20,7 +21,7 @@ class FloorplanGenerator:
         lora_adapter_path=None,
         test_split="test",
         test_range=None,
-        max_new_tokens=2048,
+        max_new_tokens=4096,
         batch_size=2,
         device="cuda",
         output_dir="outputs"
@@ -53,7 +54,9 @@ class FloorplanGenerator:
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4"
             ),
-            trust_remote_code=True
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+            attn_implementation="flash_attention_2",
         )
         self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto", trust_remote_code=True)
         self.model.eval()
@@ -160,13 +163,19 @@ class FloorplanGenerator:
                 batch_prompts = [current_prompts[idx] for idx in unresolved_indices]
                 inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True)
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
-                with torch.no_grad():
+                with torch.inference_mode():
+                    t0 = time.time()
                     with torch.amp.autocast(self.device, dtype=torch.bfloat16):
+                        print("Generating floorplans...")
                         outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
+                        print("Floorplans generated.")
+                    t1 = time.time()
+                    print(f"Done.  Inference took {t1 - t0:.2f}s.")
 
                 for pos, idx in enumerate(unresolved_indices):
                     generated_text = self.tokenizer.decode(outputs[pos], skip_special_tokens=True)
                     output_json = extract_output_json(generated_text)
+                    print(generated_text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                     sample_dir_feedback = os.path.join(sample_dir, "feedback")
@@ -204,7 +213,7 @@ class FloorplanGenerator:
                             history=histories[idx]
                         )
                         current_prompts[idx] = new_prompt
-                        print(new_prompt)
+                        # print(new_prompt)
                     
                     with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
                         filtered_history = [

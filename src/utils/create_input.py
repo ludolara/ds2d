@@ -12,7 +12,7 @@ def create_input(sample, is_str=True):
             }
             for room in sample.get("rooms", [])
         ],
-        # "edges": sample.get("edges", []),
+        "edges": sample.get("edges", []),
     }
     if is_str:
         return str({"input": inp})

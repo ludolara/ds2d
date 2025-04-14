@@ -21,4 +21,4 @@ TEST_RANGE=${1:-"1,700"}
 python src/pred/run_generation.py \
     --with_feedback \
     --test_range "$TEST_RANGE" \
-    --batch_size 2
+    --batch_size 4
