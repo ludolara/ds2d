@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=ds2d-train
-#SBATCH --output=log/job_output.log
-#SBATCH --error=log/job_error.log
-#SBATCH --nodes=3
+#SBATCH --output=log_8B/job_output.log
+#SBATCH --error=log_8B/job_error.log
+#SBATCH --nodes=4
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
@@ -14,8 +14,8 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${2:-10} 
-OUTPUT_DIR="output/rplan_${EPOCHS}/"
+EPOCHS=${2:-30} 
+OUTPUT_DIR="output/rplan_${EPOCHS}_8B_non_BD/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -27,17 +27,17 @@ echo Number of nodes: $num_nodes
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_backend c10d --rdzv_endpoint $head_node_ip:29500 ./src/finetuning.py \
+srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_backend c10d --rdzv_endpoint $head_node_ip:29500 ./src/train/finetuning.py \
     --use_peft \
     --peft_method lora \
     --quantization 4bit \
-    --model_name models/Llama-3.3-70B-Instruct \
-    --batch_size_training 2 \
+    --model_name models/Llama-3.1-8B-Instruct \
+    --batch_size_training 8 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
     --context_length 4096 \
     --enable_fsdp True \
-    --custom_dataset.file "src/floorplan_dataset.py" \
+    --custom_dataset.file "src/train/floorplan_dataset.py" \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "floorplans"

@@ -40,7 +40,7 @@ class RPLANConverter:
         total_area = 0.0
 
         rooms = [{
-            "id": i,
+            "id": str(f"room|{i}"),
             "room_type": self._map_room_type(rt),
             "segments": [] 
         } for i, rt in enumerate(data["room_type"])]
@@ -81,7 +81,7 @@ class RPLANConverter:
             'total_area': round(total_area, self.round_value),
             'room_types': [r['room_type'] for r in rooms],
             'rooms': rooms,
-            'edges': data["ed_rm"],
+            # 'edges': data["ed_rm"],
         }
 
     def create_dataset(self, raw_data: List[Dict[str, Any]]) -> DatasetDict:
@@ -117,12 +117,12 @@ class RPLANConverter:
         rplan_json = self._load_folder(raw_data)
         return self.create_dataset(rplan_json)
 
-# if __name__ == "__main__":
-#     rplan_json = "datasets/rplan_json"
-#     converter = RPLANConverter()
-#     dataset = converter(rplan_json) 
-#     dataset.save_to_disk("datasets/rplan_converted")
-#     print("Dataset saved to disk.")
-#     print(dataset)
-#     print(dataset["validation"][0])
+if __name__ == "__main__":
+    rplan_json = "datasets/rplan_json"
+    converter = RPLANConverter()
+    dataset = converter(rplan_json) 
+    dataset.save_to_disk("datasets/rplan_converted_fixed")
+    print("Dataset saved to disk.")
+    print(dataset)
+    print(dataset["validation"][0])
 

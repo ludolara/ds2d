@@ -37,7 +37,8 @@ class FloorplanGenerator:
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_name_or_path, 
             cache_dir=CACHE_DIR, 
-            device_map="auto"
+            device_map="auto",
+            trust_remote_code=True
         )
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -48,12 +49,13 @@ class FloorplanGenerator:
             cache_dir=CACHE_DIR,
             quantization_config=BitsAndBytesConfig(
                 load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_compute_dtype=torch.bfloat16,
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4"
-            )
+            ),
+            trust_remote_code=True
         )
-        self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto")
+        self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto", trust_remote_code=True)
         self.model.eval()
 
         if hasattr(torch, 'compile'):
@@ -66,7 +68,7 @@ class FloorplanGenerator:
                 self.test_range_start = self.test_range_start - 1
                 self.dataset = self.dataset.select(range(self.test_range_start, self.test_range_end))
             except Exception as e:
-                print("Invalid test_range format. Expected format: 'start,end' (e.g., '1,1000'). Using full dataset.")
+                print("Invalid test_range format. Expected format: 'start,end' (e.g., '1,101').")
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -121,7 +123,7 @@ class FloorplanGenerator:
             prompts = [self._build_prompt(sample) for sample in samples]
 
             inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-            inputs = {k: v.to(self.device, dtype=torch.float16) for k, v in inputs.items()}
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
             with torch.no_grad():
                 outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
 
@@ -141,7 +143,7 @@ class FloorplanGenerator:
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(output_json, f, indent=4)
 
-    def generate_floorplans_with_feedback(self, feedback_iterations=5):
+    def generate_floorplans_with_feedback(self, feedback_iterations=3):
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans with feedback"):
             raw_batch = self.dataset[i: i + self.batch_size]
             samples = [dict(zip(raw_batch.keys(), t)) for t in zip(*raw_batch.values())]

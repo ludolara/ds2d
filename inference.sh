@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
 #SBATCH --time=06:00:00
-#SBATCH --account=aip-bengioy
+#SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
 
@@ -16,9 +16,9 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-TEST_RANGE=${1:-"101,1000"}
+TEST_RANGE=${1:-"1,700"}
 
 python src/pred/run_generation.py \
     --with_feedback \
     --test_range "$TEST_RANGE" \
-    --batch_size 32
+    --batch_size 2

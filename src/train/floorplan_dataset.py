@@ -1,25 +1,26 @@
 from datasets import load_from_disk, concatenate_datasets
 
-def create_input(sample):
+def create_input(sample, is_str=True):
     inp = {
-        "input": {
-            'room_count': sample.get("room_count"),
-            'total_area': sample.get("total_area"),
-            'room_types': sample.get("room_types"),
-            'rooms': [
-                {
-                    "room_type": room.get("room_type"),
-                    "width": room.get("width"),
-                    "height": room.get("height"),
-                    **({"is_regular": room["is_regular"]} if "is_regular" in room else {})
-                }
-                for room in sample.get("rooms", [])
-            ],
-            "edges": sample.get("edges", [])
-        }
+        "room_count": sample.get("room_count"),
+        "total_area": sample.get("total_area"),
+        "room_types": sample.get("room_types"),
+        "rooms": [
+            {
+                "room_type": room.get("room_type"),
+                "width": room.get("width"),
+                "height": room.get("height"),
+                "is_regular": room.get("is_regular"),
+            }
+            for room in sample.get("rooms", [])
+        ],
+        # "edges": sample.get("edges", []),
     }
-    return str(inp)
-
+    if is_str:
+        return str({"input": inp})
+    else:
+        return inp
+    
 def create_output(sample):
     if isinstance(sample, dict) and "edges" in sample:
         sample.pop("edges")
@@ -27,9 +28,7 @@ def create_output(sample):
     return str(output)
 
 def get_custom_dataset(dataset_config, tokenizer, split):
-    rplan = load_from_disk('datasets/rplan_converted')[split]
-    # procthor = load_from_disk('datasets/DStruct2Design-nightly')[split]
-    # dataset = concatenate_datasets([rplan, procthor])
+    rplan = load_from_disk('datasets/rplan_converted_fixed')[split]
 
     dataset = concatenate_datasets([rplan])
     dataset = dataset.shuffle(seed=42)

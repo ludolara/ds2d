@@ -5,4 +5,5 @@ wandb/
 models/
 datasets/
 output/
-log/
+log*/
+results_*/

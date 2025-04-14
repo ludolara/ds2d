@@ -3,18 +3,18 @@ from src.utils.json_check.verify import is_valid_json_feedback
 
 class FeedbackGenerator:
     @staticmethod
-    def analyze(output_floor_plan, input_prompt, tol=1e-6, area_tol=30):
+    def analyze(output_floor_plan, input_prompt, tol=1e-6, area_tol=10):
         rooms = output_floor_plan.get("rooms", [])
         polygons = {}
 
         for idx, room in enumerate(rooms):
             try:
-                room_id = room.get("id")
+                room_id = str(room.get("id"))
                 poly_points = room.get("floor_polygon", [])
                 if not poly_points or not room_id:
                     continue
 
-                points = [(float(pt["x"]), float(pt["z"])) for pt in poly_points]
+                points = [(float(pt["x"]), float(pt["y"])) for pt in poly_points]
                 poly = Polygon(points)
 
                 if not poly.is_valid:
@@ -86,7 +86,7 @@ class FeedbackGenerator:
             "is_valid_json": is_valid,
             "is_valid_json_feedback": feedback,
             "room_count": {"expected": expected_room_count, "actual": actual_room_count, "match": room_count_match},
-            "room_types": {"expected": expected_total_area, "actual": actual_room_types, "match": room_types_match},
+            "room_types": {"expected": expected_room_types, "actual": actual_room_types, "match": room_types_match},
             "total_area": {"expected": expected_total_area, "actual": round(actual_total_area, 2), "tolerance": area_tol, "match": total_area_match},
         }
 
@@ -127,3 +127,4 @@ class FeedbackGenerator:
                 feedback += "Please revise the floor plan to remove these overlaps. \n"
 
         return feedback
+    
