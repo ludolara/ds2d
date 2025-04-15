@@ -4,13 +4,7 @@ from src.pred.floorplan_generator import FloorplanGenerator
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name_or_path", type=str, default="models/Llama-3.3-70B-Instruct")
-    parser.add_argument("--lora_a
-    
-    
-    
-    
-    
-    dapter_path", type=str, default="output/rplan_3_70B/")
+    parser.add_argument("--lora_adapter_path", type=str, default="output/rplan_3_70B/")
     parser.add_argument("--test_split", type=str, default="test")
     parser.add_argument("--test_range", type=str, default=None, help="Specify range of test examples to use (e.g., '1,101' for the first 100 samples)")
     parser.add_argument("--max_new_tokens", type=int, default=4096)

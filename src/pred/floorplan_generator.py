@@ -34,54 +34,15 @@ class FloorplanGenerator:
         self.output_dir = output_dir
         self.test_range_start = 0
 
-        # self.tokenizer = AutoTokenizer.from_pretrained(
-        #     self.model_name_or_path, 
-        #     cache_dir=CACHE_DIR, 
-        #     device_map="auto",
-        #     trust_remote_code=True
-        # )
-        # if self.tokenizer.pad_token is None:
-        #     self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        # self.model = AutoModelForCausalLM.from_pretrained(
-        #     self.model_name_or_path,
-        #     device_map="auto",
-        #     cache_dir=CACHE_DIR,
-        #     quantization_config=BitsAndBytesConfig(
-        #         load_in_4bit=True,
-        #         bnb_4bit_compute_dtype=torch.bfloat16,
-        #         bnb_4bit_use_double_quant=True,
-        #         bnb_4bit_quant_type="nf4"
-        #     ),
-        #     torch_dtype=torch.bfloat16,
-        #     trust_remote_code=True,
-        #     attn_implementation="flash_attention_2",
-        # )
-        # self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto", trust_remote_code=True)
-        # self.model.eval()
-
-        # if hasattr(torch, 'compile'):
-        #     self.model = torch.compile(self.model, mode='reduce-overhead')
-
-        # self.model = LLM(
-        #     self.model_name_or_path,
-        #     # enable_lora=True,
-        #     # tensor_parallel_size=4,
-        #     # device="cuda",
-        #     # trust_remote_code=True
-        # )
-
         self.model = LLM(
-            model="/home/l/luislara/links/scratch/ds2d_v2/models/Llama-3.3-70B-Instruct",
+            model=self.model_name_or_path,
             tensor_parallel_size=4,
             device=self.device,
             enable_lora=True
         )
         self.lora_request = LoRARequest("floorplan_adapter", 1, self.lora_adapter_path)
         self.sampling_params = SamplingParams(
-            max_tokens=self.max_new_tokens,
-            # temperature=0.0,
-            # top_p=1.0,
+            max_tokens=self.max_new_tokens
         )
 
         self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
@@ -165,9 +126,9 @@ class FloorplanGenerator:
                 print(f"Done.  Inference took {t1 - t0:.2f}s.")
 
                 for pos, idx in enumerate(unresolved_indices):
-                    generated_text = outputs[pos]["text"]
+                    generated_text = outputs[pos].outputs[0].text
                     output_json = extract_output_json(generated_text)
-                    # print(generated_text)
+                    print(generated_text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                     sample_dir_feedback = os.path.join(sample_dir, "feedback")

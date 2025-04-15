@@ -1,0 +1,9 @@
+vllm
+torch==2.6
+torchvision==0.21.0
+torchaudio==2.6
+tqdm
+python-dotenv
+datasets
+shapely
+typing_extensions

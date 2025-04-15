@@ -10,12 +10,9 @@
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
-# export VLLM_WORKER_MULTIPROC_METHOD="spawn"
 
 module load python/3.11
 module load arrow
-# module load opencv
-# module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
 
 TEST_RANGE=${1:-"1,1000"}
@@ -23,4 +20,4 @@ TEST_RANGE=${1:-"1,1000"}
 python src/pred/run_generation.py \
     --with_feedback \
     --test_range "$TEST_RANGE" \
-    --batch_size 2048
+    --batch_size 2
