@@ -18,6 +18,7 @@ export WANDB_MODE=offline
 
 module load python/3.11
 module load arrow
+module load opencv
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 

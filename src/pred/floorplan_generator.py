@@ -5,11 +5,10 @@ from dotenv import load_dotenv
 from src.utils import create_input
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from peft import PeftModel
 from datasets import load_from_disk
-import torch
 import time
+from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 
 load_dotenv()
 CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE")
@@ -22,7 +21,7 @@ class FloorplanGenerator:
         test_split="test",
         test_range=None,
         max_new_tokens=4096,
-        batch_size=2,
+        batch_size=32,
         device="cuda",
         output_dir="outputs"
     ):
@@ -35,34 +34,55 @@ class FloorplanGenerator:
         self.output_dir = output_dir
         self.test_range_start = 0
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name_or_path, 
-            cache_dir=CACHE_DIR, 
-            device_map="auto",
-            trust_remote_code=True
-        )
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        # self.tokenizer = AutoTokenizer.from_pretrained(
+        #     self.model_name_or_path, 
+        #     cache_dir=CACHE_DIR, 
+        #     device_map="auto",
+        #     trust_remote_code=True
+        # )
+        # if self.tokenizer.pad_token is None:
+        #     self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name_or_path,
-            device_map="auto",
-            cache_dir=CACHE_DIR,
-            quantization_config=BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.bfloat16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4"
-            ),
-            torch_dtype=torch.bfloat16,
-            trust_remote_code=True,
-            attn_implementation="flash_attention_2",
-        )
-        self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto", trust_remote_code=True)
-        self.model.eval()
+        # self.model = AutoModelForCausalLM.from_pretrained(
+        #     self.model_name_or_path,
+        #     device_map="auto",
+        #     cache_dir=CACHE_DIR,
+        #     quantization_config=BitsAndBytesConfig(
+        #         load_in_4bit=True,
+        #         bnb_4bit_compute_dtype=torch.bfloat16,
+        #         bnb_4bit_use_double_quant=True,
+        #         bnb_4bit_quant_type="nf4"
+        #     ),
+        #     torch_dtype=torch.bfloat16,
+        #     trust_remote_code=True,
+        #     attn_implementation="flash_attention_2",
+        # )
+        # self.model = PeftModel.from_pretrained(self.model, self.lora_adapter_path, device_map="auto", trust_remote_code=True)
+        # self.model.eval()
 
-        if hasattr(torch, 'compile'):
-            self.model = torch.compile(self.model, mode='reduce-overhead')
+        # if hasattr(torch, 'compile'):
+        #     self.model = torch.compile(self.model, mode='reduce-overhead')
+
+        # self.model = LLM(
+        #     self.model_name_or_path,
+        #     # enable_lora=True,
+        #     # tensor_parallel_size=4,
+        #     # device="cuda",
+        #     # trust_remote_code=True
+        # )
+
+        self.model = LLM(
+            model="/home/l/luislara/links/scratch/ds2d_v2/models/Llama-3.3-70B-Instruct",
+            tensor_parallel_size=4,
+            device=self.device,
+            enable_lora=True
+        )
+        self.lora_request = LoRARequest("floorplan_adapter", 1, self.lora_adapter_path)
+        self.sampling_params = SamplingParams(
+            max_tokens=self.max_new_tokens,
+            # temperature=0.0,
+            # top_p=1.0,
+        )
 
         self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
         if test_range:
@@ -119,63 +139,35 @@ class FloorplanGenerator:
 
         return re_prompt
 
-    def generate_floorplans(self):
-        for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans"):
-            raw_batch = self.dataset[i: i + self.batch_size]
-            samples = [dict(zip(raw_batch.keys(), t)) for t in zip(*raw_batch.values())]
-            prompts = [self._build_prompt(sample) for sample in samples]
-
-            inputs = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            with torch.no_grad():
-                outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
-
-            for idx, output in enumerate(outputs):
-                sample_idx = i + idx + self.test_range_start
-                sample_dir = os.path.join(self.output_dir, str(sample_idx))
-                os.makedirs(sample_dir, exist_ok=True)
-
-                generated_text = self.tokenizer.decode(output, skip_special_tokens=True)
-                output_json = extract_output_json(generated_text)
-
-                prompt_path = os.path.join(sample_dir, "prompt.json")
-                with open(prompt_path, "w", encoding="utf-8") as f:
-                    json.dump(create_input(samples[idx], is_str=False), f, indent=4)
-
-                output_path = os.path.join(sample_dir, "0.json")
-                with open(output_path, "w", encoding="utf-8") as f:
-                    json.dump(output_json, f, indent=4)
-
     def generate_floorplans_with_feedback(self, feedback_iterations=3):
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans with feedback"):
             raw_batch = self.dataset[i: i + self.batch_size]
             samples = [dict(zip(raw_batch.keys(), t)) for t in zip(*raw_batch.values())]
             current_prompts = [self._build_prompt(sample) for sample in samples]
             resolved = [False] * len(samples)
-            
             histories = [[] for _ in range(len(samples))]
 
             for iteration in range(feedback_iterations):
                 unresolved_indices = [idx for idx, done in enumerate(resolved) if not done]
                 if not unresolved_indices:
-                    break  
+                    break
 
                 batch_prompts = [current_prompts[idx] for idx in unresolved_indices]
-                inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True)
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-                with torch.inference_mode():
-                    t0 = time.time()
-                    with torch.amp.autocast(self.device, dtype=torch.bfloat16):
-                        print("Generating floorplans...")
-                        outputs = self.model.generate(**inputs, max_new_tokens=self.max_new_tokens)
-                        print("Floorplans generated.")
-                    t1 = time.time()
-                    print(f"Done.  Inference took {t1 - t0:.2f}s.")
+                print("Generating floorplans...")
+                t0 = time.time()
+                outputs = self.model.generate(
+                    batch_prompts,
+                    self.sampling_params,
+                    lora_request=self.lora_request
+                )
+                t1 = time.time()
+                # print(outputs)
+                print(f"Done.  Inference took {t1 - t0:.2f}s.")
 
                 for pos, idx in enumerate(unresolved_indices):
-                    generated_text = self.tokenizer.decode(outputs[pos], skip_special_tokens=True)
+                    generated_text = outputs[pos]["text"]
                     output_json = extract_output_json(generated_text)
-                    print(generated_text)
+                    # print(generated_text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                     sample_dir_feedback = os.path.join(sample_dir, "feedback")
@@ -191,9 +183,13 @@ class FloorplanGenerator:
                         json.dump(output_json, f, indent=4)
 
                     overlap_metrics = FeedbackGenerator.analyze(output_json, input_prompt)
-                    
+
                     current_feedback = ""
-                    if overlap_metrics["is_overlapping"] or not overlap_metrics["is_valid_json"] or not overlap_metrics["room_count"]["match"] or not overlap_metrics["room_types"]["match"] or not overlap_metrics["total_area"]["match"]:
+                    if (overlap_metrics["is_overlapping"] or 
+                        not overlap_metrics["is_valid_json"] or 
+                        not overlap_metrics["room_count"]["match"] or 
+                        not overlap_metrics["room_types"]["match"] or 
+                        not overlap_metrics["total_area"]["match"]):
                         current_feedback += FeedbackGenerator.create_feedback(overlap_metrics)
                     else:
                         resolved[idx] = True
@@ -213,14 +209,10 @@ class FloorplanGenerator:
                             history=histories[idx]
                         )
                         current_prompts[idx] = new_prompt
-                        # print(new_prompt)
-                    
+
                     with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
                         filtered_history = [
                             {key: value for key, value in entry.items() if key != "output"}
                             for entry in histories[idx]
                         ]
                         json.dump(filtered_history, f, indent=4)
-
-                if all(resolved):
-                    break
