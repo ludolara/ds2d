@@ -12,3 +12,4 @@ prompt = "You are a pirate, talk like a pirate. What is your name?"
 
 outputs = model.generate([prompt], sampling_params, lora_request=lora)
 print(outputs[0].outputs[0].text)
+

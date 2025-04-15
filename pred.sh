@@ -15,9 +15,11 @@ module load python/3.11
 module load arrow
 source $SCRATCH/env/vllm/bin/activate
 
-TEST_RANGE=${1:-"1,1000"}
+TEST_RANGE=${1:-"1,100"}
 
 python src/pred/run_generation.py \
     --with_feedback \
+    --model_name_or_path "openai/gpt-4o" \
     --test_range "$TEST_RANGE" \
-    --batch_size 2
+    --batch_size 2 \
+    --output_dir "results_feedback_openai/generations/rplan/full_prompt"

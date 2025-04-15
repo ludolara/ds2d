@@ -17,6 +17,7 @@ class FloorplanGenerator:
         self,
         model_name_or_path="meta-llama/Llama-3.3-70B-Instruct",
         lora_adapter_path=None,
+        dataset_name_or_path="datasets/rplan_converted",
         test_split="test",
         test_range=None,
         max_new_tokens=4096,
@@ -26,6 +27,7 @@ class FloorplanGenerator:
     ):
         self.model_name_or_path = model_name_or_path
         self.lora_adapter_path = lora_adapter_path
+        self.dataset_name_or_path = dataset_name_or_path
         self.test_split = test_split
         self.max_new_tokens = max_new_tokens
         self.batch_size = batch_size
@@ -44,7 +46,7 @@ class FloorplanGenerator:
             max_tokens=self.max_new_tokens
         )
 
-        self.dataset = load_from_disk("datasets/rplan_converted")[self.test_split]
+        self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]
         if test_range:
             try:
                 self.test_range_start, self.test_range_end = map(int, test_range.split(","))
@@ -172,5 +174,6 @@ class FloorplanGenerator:
                         ]
                         json.dump(filtered_history, f, indent=4)
 
-                    with open(os.path.join(sample_dir_feedback, "feedback.txt"), "w", encoding="utf-8") as f:
-                        f.write(histories)
+                    with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
+                        f.writelines(current_feedback)
+
