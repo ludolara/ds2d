@@ -6,7 +6,6 @@ from src.utils import create_input
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
 from datasets import load_from_disk
-import time
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 
@@ -114,16 +113,11 @@ class FloorplanGenerator:
                     break
 
                 batch_prompts = [current_prompts[idx] for idx in unresolved_indices]
-                print("Generating floorplans...")
-                t0 = time.time()
                 outputs = self.model.generate(
                     batch_prompts,
                     self.sampling_params,
                     lora_request=self.lora_request
                 )
-                t1 = time.time()
-                # print(outputs)
-                print(f"Done.  Inference took {t1 - t0:.2f}s.")
 
                 for pos, idx in enumerate(unresolved_indices):
                     generated_text = outputs[pos].outputs[0].text
@@ -177,3 +171,6 @@ class FloorplanGenerator:
                             for entry in histories[idx]
                         ]
                         json.dump(filtered_history, f, indent=4)
+
+                    with open(os.path.join(sample_dir_feedback, "feedback.txt"), "w", encoding="utf-8") as f:
+                        f.write(histories)

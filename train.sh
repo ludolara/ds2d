@@ -9,13 +9,6 @@
 #SBATCH --time=03:00:00
 #SBATCH --account=aip-bengioy
 
-# Source the .env file
-# if [ -f .env ]; then
-#     export $(grep -v '^#' .env | xargs)
-# fi
-
-export WANDB_MODE=offline
-
 module load python/3.11
 module load arrow
 module load opencv
@@ -24,6 +17,8 @@ source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${2:-30} 
 OUTPUT_DIR="output/procthor_${EPOCHS}/"
+
+export WANDB_MODE=offline
 
 torchrun --nnodes 2 --nproc_per_node 4 finetuning.py \
     --use_peft \
@@ -39,18 +34,3 @@ torchrun --nnodes 2 --nproc_per_node 4 finetuning.py \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "floorplans"
-
-# python -m llama_cookbook.finetuning \
-#     --use_peft \
-#     --peft_method lora \
-#     --quantization \
-#     --model_name models/Llama-3.1-8B-Instruct \
-#     --batch_size_training 2 \
-#     --num_epochs $EPOCHS \
-#     --dataset "custom_dataset" \
-#     --custom_dataset.file "floorplan_dataset.py" \
-#     --custom_dataset.data_path $DATA \
-#     --output_dir $OUTPUT_DIR \
-#     --use_wandb True \
-#     --wandb_config.project "floorplans" \
-#     --train_config.max_train_step 100

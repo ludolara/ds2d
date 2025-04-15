@@ -108,8 +108,8 @@ class FeedbackGenerator:
         if overlap_metrics.get("is_overlapping", False):
             feedback += (
                 "The generated floor plan contains overlapping regions. "
-                f"Total overlapping area is {overlap_metrics['total_overlap_area']:.2f} square units, "
-                f"which represents {overlap_metrics['overlap_percentage']:.2f}% of the total floor area. "
+                f"Total overlapping area is {overlap_metrics['total_overlap_area']:.2f} square meters."
+                # f"which represents {overlap_metrics['overlap_percentage']:.2f}% of the total floor area. "
             )
 
             unique_pairs = {}
@@ -122,7 +122,7 @@ class FeedbackGenerator:
                 for pair, area in unique_pairs.items():
                     feedback += (
                         f"  - Rooms {pair[0]} and {pair[1]} overlap by "
-                        f"{area:.2f} square units.\n"
+                        f"{area:.2f} square meters.\n"
                     )
                 feedback += "Please revise the floor plan to remove these overlaps. \n"
 
