@@ -1,7 +1,6 @@
 import os
-from dotenv import load_dotenv
 from huggingface_hub import snapshot_download
-from datasets import load_dataset, load_from_disk
+# from datasets import load_dataset
 
 model_repo_id = "meta-llama/Llama-4-Scout-17B-16E-Instruct"  
 
@@ -12,7 +11,5 @@ print(f"Model downloaded to: models/Llama-4-Scout-17B-16E-Instruct")
 # print(f"Dataset 'ludolara/DStruct2Design-nightly' downloaded to cache directory: datasets/")
 # procthor.save_to_disk("datasets/DStruct2Design-nightly")
 
-# procthor = load_from_disk('datasets/rplan_converted')
-# print(procthor['train'][60101])
 
 

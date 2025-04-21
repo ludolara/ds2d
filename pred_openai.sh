@@ -6,7 +6,7 @@
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=3:00:00
+#SBATCH --time=06:00:00
 #SBATCH --account=aip-bengioy
 
 export PYTHONPATH="$PYTHONPATH:/."
@@ -15,9 +15,10 @@ module load python/3.11
 module load arrow
 source $SCRATCH/env/vllm/bin/activate
 
-TEST_RANGE=${1:-"512,2000"}
+TEST_RANGE=${1:-"1,100"}
 
 python src/pred/run_generation.py \
-    --batch_size 128 \
-    --output_dir "results_better_feedback/generations/rplan_3_70B/full_prompt" \
+    --model_name_or_path "gpt-4o" \
     --test_range "$TEST_RANGE" \
+    --batch_size 1 \
+    --output_dir "results_feedback_openai/generations/rplan/full_prompt"

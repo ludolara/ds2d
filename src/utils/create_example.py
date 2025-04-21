@@ -12,10 +12,16 @@ def create_input(sample, is_str=True):
             }
             for room in sample.get("rooms", [])
         ],
-        "edges": sample.get("edges", []),
+        # "edges": sample.get("edges", []),
     }
     if is_str:
         return str({"input": inp})
     else:
         return inp
+    
+def create_output(sample):
+    if isinstance(sample, dict) and "edges" in sample:
+        sample.pop("edges")
+    output = {"output": sample}
+    return str(output)
     

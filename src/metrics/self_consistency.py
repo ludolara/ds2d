@@ -44,8 +44,8 @@ def metric_polygon_area_self_consistency(floorplan):
 
 
 def metric_polygon_overlap_count_self_consistency(floorplan):
-    # print(floorplan.count_room_overlaps())
-    return floorplan.count_room_overlaps() > 0
+    # return floorplan.count_room_overlaps() > 0
+    return floorplan.calculate_overlap_percentage() > 0
 
 def metric_polygon_overlap_percentage_self_consistency(floorplan):
     return floorplan.calculate_overlap_percentage()

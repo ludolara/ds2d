@@ -95,11 +95,52 @@ class Floorplan():
                     pass
         return buff
     
-    def calculate_overlap_percentage(self, tol=1e-5):
+    # def calculate_overlap_percentage(self, tol=1e-5):
+    #     rooms = self.get_rooms()
+    #     polygons = {}
+
+    #     for room in rooms:
+    #         try:
+    #             room_id = room.get("id")
+    #             poly_points = room.get("floor_polygon", [])
+    #             if not poly_points or not room_id:
+    #                 continue
+
+    #             points = [(float(pt["x"]), float(pt["y"])) for pt in poly_points]
+    #             poly = Poly(points)
+
+    #             if not poly.is_valid:
+    #                 poly = poly.buffer(0)
+
+    #             if poly.is_valid and poly.area > tol:
+    #                 polygons[room_id] = poly
+    #         except Exception:
+    #             continue
+
+    #     total_overlap_area = 0.0
+
+    #     room_ids = list(polygons.keys())
+    #     for i in range(len(room_ids)):
+    #         for j in range(i + 1, len(room_ids)):
+    #             poly1 = polygons[room_ids[i]]
+    #             poly2 = polygons[room_ids[j]]
+    #             if poly1.intersects(poly2):
+    #                 intersection = poly1.intersection(poly2)
+    #                 if not intersection.is_empty and intersection.area > tol:
+    #                     total_overlap_area += intersection.area
+
+    #     total_floor_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
+    #     overlap_ratio = (total_overlap_area / total_floor_area) if total_floor_area > tol else 0
+
+    #     return overlap_ratio
+    
+    def calculate_overlap_percentage(self, tol=1e-5, exclude_doors=True):
         rooms = self.get_rooms()
         polygons = {}
 
         for room in rooms:
+            if exclude_doors and room.get("room_type") in ("front_door", "interior_door"):
+                continue
             try:
                 room_id = room.get("id")
                 poly_points = room.get("floor_polygon", [])
@@ -108,31 +149,26 @@ class Floorplan():
 
                 points = [(float(pt["x"]), float(pt["y"])) for pt in poly_points]
                 poly = Poly(points)
-
                 if not poly.is_valid:
                     poly = poly.buffer(0)
-
                 if poly.is_valid and poly.area > tol:
                     polygons[room_id] = poly
             except Exception:
                 continue
 
         total_overlap_area = 0.0
+        ids = list(polygons)
+        for i in range(len(ids)):
+            for j in range(i + 1, len(ids)):
+                p1, p2 = polygons[ids[i]], polygons[ids[j]]
+                if p1.intersects(p2):
+                    inter = p1.intersection(p2)
+                    if not inter.is_empty and inter.area > tol:
+                        total_overlap_area += inter.area
 
-        room_ids = list(polygons.keys())
-        for i in range(len(room_ids)):
-            for j in range(i + 1, len(room_ids)):
-                poly1 = polygons[room_ids[i]]
-                poly2 = polygons[room_ids[j]]
-                if poly1.intersects(poly2):
-                    intersection = poly1.intersection(poly2)
-                    if not intersection.is_empty and intersection.area > tol:
-                        total_overlap_area += intersection.area
+        total_floor_area = sum(p.area for p in polygons.values() if p.is_valid)
+        return (total_overlap_area / total_floor_area) if total_floor_area > tol else 0
 
-        total_floor_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
-        overlap_ratio = (total_overlap_area / total_floor_area) if total_floor_area > tol else 0
-
-        return overlap_ratio
 
     def get_room_area(self, room_id):
         assert self.check_room_exists(room_id), f"Room with id {room_id} does not exist"

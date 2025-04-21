@@ -51,19 +51,15 @@ schema = {
                 },
                 "y": {
                   "type": "number"
-                },
-                "z": {
-                  "type": "number"
                 }
               },
               "anyOf": [
-                {"required": ["x", "z"]},
                 {"required": ["x", "y"]}
               ]
             }
           }
         },
-        "required": ["id", "room_type", "area", "width", "height", "floor_polygon"]
+        "required": ["id", "room_type", "area", "floor_polygon"]
       }
     },
   },

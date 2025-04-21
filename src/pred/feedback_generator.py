@@ -103,7 +103,7 @@ class FeedbackGenerator:
             if overlap_metrics["room_types"]["match"] is False:
                 feedback += f"Expected room types {overlap_metrics['room_types']['expected']}, but got {overlap_metrics['room_types']['actual']}. "
             if overlap_metrics["total_area"]["match"] is False:
-                feedback += f"Expected total area {overlap_metrics['total_area']['expected']}, but got {overlap_metrics['total_area']['actual']:.2f}. "
+                feedback += f"Expected total area {overlap_metrics['total_area']['expected']} square meters, but got {overlap_metrics['total_area']['actual']:.2f} square meters. "
 
         if overlap_metrics.get("is_overlapping", False):
             feedback += (
@@ -124,7 +124,8 @@ class FeedbackGenerator:
                         f"  - Rooms {pair[0]} and {pair[1]} overlap by "
                         f"{area:.2f} square meters.\n"
                     )
-                feedback += "Please revise the floor plan to remove these overlaps. \n"
+                # feedback += "Please revise the floor plan to remove these overlaps. \n"
+                feedback += "Revise the floor plan to eliminate any overlapping areas by repositioning and/or slightly adjusting the affected rooms so that each room is distinctly separated by clear boundaries. It is critical to remove all overlaps, as they compromise the design's integrity, clarity, and functionality. Make only the minimal changes necessary to resolve the overlaps while preserving the original design output, connectivity, and overall flow between spaces. \n"
 
         return feedback
     

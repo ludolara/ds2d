@@ -8,6 +8,7 @@ from src.pred.extract_output_json import extract_output_json
 from datasets import load_from_disk
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
+from openai import OpenAI
 
 load_dotenv()
 CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE")
@@ -124,7 +125,7 @@ class FloorplanGenerator:
                 for pos, idx in enumerate(unresolved_indices):
                     generated_text = outputs[pos].outputs[0].text
                     output_json = extract_output_json(generated_text)
-                    print(generated_text)
+                    # print(generated_text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                     sample_dir_feedback = os.path.join(sample_dir, "feedback")
@@ -167,6 +168,11 @@ class FloorplanGenerator:
                         )
                         current_prompts[idx] = new_prompt
 
+                        with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
+                            f.writelines(new_prompt)
+                            f.writelines("=" * 20)
+                            f.write("\n")
+
                     with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
                         filtered_history = [
                             {key: value for key, value in entry.items() if key != "output"}
@@ -174,6 +180,5 @@ class FloorplanGenerator:
                         ]
                         json.dump(filtered_history, f, indent=4)
 
-                    with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
-                        f.writelines(current_feedback)
+
 

@@ -1,4 +1,4 @@
 from .json_repair import *
-from .create_input import create_input
+from .create_example import create_input, create_output
 
-__all__ = ['repair_json', 'create_input']
+__all__ = ['repair_json', 'create_input', create_output]
