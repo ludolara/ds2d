@@ -83,22 +83,22 @@ class RPLANGraph:
         for idx, nbrs in raw_adj.items():
             rt = self.graph.nodes[idx]['room_type']
             base = self.room_class[rt]
-            src_label = f"{base}_{type_idx[idx]}" if type_idx[idx] is not None else base
+            src_label = f"{base}|{type_idx[idx]}" if type_idx[idx] is not None else base
             neighbor_labels: List[str] = []
             for n in nbrs:
                 rt_n = self.graph.nodes[n]['room_type']
                 nb_base = self.room_class[rt_n]
-                nb_label = f"{nb_base}_{type_idx[n]}" if type_idx[n] is not None else nb_base
+                nb_label = f"{nb_base}|{type_idx[n]}" if type_idx[n] is not None else nb_base
                 neighbor_labels.append(nb_label)
             labeled[src_label] = neighbor_labels
         return labeled
 
-    def draw(self, title: str = "Floorplan Graph") -> None:
+    def draw(self, title: str = "Floorplan Graph", seed: int = 42) -> None:
         """
         Draw the floorplan graph using matplotlib.
         Nodes colored by room_type per cmap.
         """
-        pos = nx.spring_layout(self.graph, seed=84)
+        pos = nx.spring_layout(self.graph, seed=seed)
         nx.draw_networkx_nodes(
             self.graph,
             pos,

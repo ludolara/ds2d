@@ -1,15 +1,17 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, ClassVar
+from typing import Any, Dict, List, Set
 from pathlib import Path
 import json
 from datasets import DatasetDict, Dataset
 from sklearn.model_selection import train_test_split
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 from shapely.ops import polygonize
 from shapely.affinity import scale
 from tqdm import tqdm
 from dataset_convert.rplan_graph import RPLANGraph
 from utils.constants import RPLAN_ROOM_CLASS
+from collections import Counter, defaultdict, OrderedDict
+import random
 
 @dataclass
 class RPLANConverter:
@@ -38,14 +40,32 @@ class RPLANConverter:
             raise ValueError("No polygon could be formed from segments.")
         if len(polys) > 1:
             raise ValueError(f"Multiple polygons detected: {len(polys)}")
-        return polys[0]
+        return polys[0] 
+
+    def _shuffle_spaces(self, spaces: List[OrderedDict], seed: int = 42) -> List[Dict[str, Any]]:
+        random.seed(seed)
+        random_spaces = list(spaces)
+        random.shuffle(random_spaces)
+        return random_spaces
 
     def _convert_entry(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        temp = [{
-            "id": f"{self._map_room_type(code)}|{i}",
-            "room_type": self._map_room_type(code),
-            "segments": []
-        } for i, code in enumerate(data["room_type"])]
+        counts = Counter(data["room_type"])
+        idx_counters = defaultdict(int)
+
+        temp = []
+        for code in data["room_type"]:
+            name = self._map_room_type(code)
+            if counts[code] > 1:
+                idx = idx_counters[code]
+                room_id = f"{name}|{idx}"
+                idx_counters[code] += 1
+            else:
+                room_id = name
+            temp.append({
+                "id": room_id,
+                "room_type": name,
+                "segments": []
+            })
 
         # assign each edge segment to its first room
         for edge, rm_idxs in zip(data["edges"], data["ed_rm"]):
@@ -54,7 +74,7 @@ class RPLANConverter:
                 temp[rm_idxs[0]]["segments"].append(seg)
 
         total_area = 0.0
-        processed = []
+        spaces = []
         for room in temp:
             segs = room.pop("segments", [])
             if not segs:
@@ -64,17 +84,17 @@ class RPLANConverter:
                 poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0,0))
                 area = round(poly.area, self.round_value)
                 minx, miny, maxx, maxy = poly.bounds
-                processed.append({
+                spaces.append(OrderedDict({
                     **room,
                     "area": area,
                     "width": round(maxx - minx, self.round_value),
                     "height": round(maxy - miny, self.round_value),
-                    "is_regular": 1 if (len(poly.exterior.coords) - 1) == 4 else 0,
+                    "is_rectangular": 1 if (len(poly.exterior.coords) - 1) == 4 else 0,
                     "floor_polygon": [
                         {"x": round(x, self.round_value), "y": round(y, self.round_value)}
                         for x, y in poly.exterior.coords[:-1]
                     ]
-                })
+                }))
                 total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
@@ -86,19 +106,19 @@ class RPLANConverter:
             "ed_rm": data["ed_rm"]
         })
         bubble_diagram = fp_graph.bubble_diagram
-        # remove entries with rooms with empty adjacency
+        # remove entries with rooms with empty arraay
         if any(not neigh for neigh in bubble_diagram.values()):
             return None
         
-        # TODO: re-arrange rooms with doors
+        random_spaces = self._shuffle_spaces(spaces)
 
         return {
             "rplan_id": data.get("rplan_id"),
-            "room_count": len(processed),
-            "total_area": round(total_area, self.round_value),
-            "room_types": [r["room_type"] for r in processed],
+            "room_count": len(spaces),
+            # "total_area": round(total_area, self.round_value),
+            # "room_types": [r["room_type"] for r in spaces],
             "bubble_diagram": json.dumps(bubble_diagram),
-            "rooms": processed 
+            "rooms": random_spaces
         }
 
     def create_dataset(self, raw: List[Dict[str, Any]]) -> DatasetDict:
@@ -135,9 +155,3 @@ if __name__ == "__main__":
     ds.save_to_disk("datasets/rplan_converted")
     print(ds)
     print("Done. Sample:", ds["train"][0])
-    # print("Done. Sample:", ds["train"][100])
-    # print("Done. Sample:", ds["train"][1000])
-    # print("Done. Sample:", ds["train"][10000])
-    # print("Done. Sample:", ds["train"][30000])
-    
-
