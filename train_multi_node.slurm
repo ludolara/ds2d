@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=ds2d-train
-#SBATCH --output=log_8B/job_output.log
-#SBATCH --error=log_8B/job_error.log
-#SBATCH --nodes=4
+#SBATCH --output=logs/train/job_output.log
+#SBATCH --error=logs/train/job_error.log
+#SBATCH --nodes=1
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=24:00:00
-#SBATCH --account=aip-bengioy
+#SBATCH --time=2:00:00
+#SBATCH --account=aip-pal
 
 module load python/3.11
 module load arrow
@@ -15,7 +15,7 @@ module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${2:-30} 
-OUTPUT_DIR="output/rplan_${EPOCHS}_8B_non_BD/"
+OUTPUT_DIR="output/rplan_${EPOCHS}_70B/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -31,11 +31,11 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --use_peft \
     --peft_method lora \
     --quantization 4bit \
-    --model_name models/Llama-3.1-8B-Instruct \
-    --batch_size_training 8 \
+    --model_name models/Llama-3.3-70B-Instruct \
+    --batch_size_training 2 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
-    --context_length 4096 \
+    --context_length 6144 \
     --enable_fsdp True \
     --custom_dataset.file "src/train/floorplan_dataset.py" \
     --output_dir $OUTPUT_DIR \

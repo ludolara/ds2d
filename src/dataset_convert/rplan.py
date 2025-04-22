@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 from pathlib import Path
 import json
 from datasets import DatasetDict, Dataset
 from sklearn.model_selection import train_test_split
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString
 from shapely.ops import polygonize
 from shapely.affinity import scale
 from tqdm import tqdm
@@ -12,11 +12,12 @@ from dataset_convert.rplan_graph import RPLANGraph
 from utils.constants import RPLAN_ROOM_CLASS
 from collections import Counter, defaultdict, OrderedDict
 import random
+import networkx as nx
 
 @dataclass
 class RPLANConverter:
     """
-    Convert raw RPLAN JSON into a Hugging Face DatasetDict, including room polygons and adjacency.
+    Convert raw RPLAN JSON into a Hugging Face DatasetDict.
     """
     round_value: int = 1
     original_map = RPLAN_ROOM_CLASS
@@ -107,7 +108,7 @@ class RPLANConverter:
         })
         bubble_diagram = fp_graph.bubble_diagram
         # remove entries with rooms with empty arraay
-        if any(not neigh for neigh in bubble_diagram.values()):
+        if any(not neigh for neigh in bubble_diagram.values()) or not nx.is_connected(nx.from_dict_of_lists(bubble_diagram)):
             return None
         
         random_spaces = self._shuffle_spaces(spaces)
@@ -115,7 +116,7 @@ class RPLANConverter:
         return {
             "rplan_id": data.get("rplan_id"),
             "room_count": len(spaces),
-            # "total_area": round(total_area, self.round_value),
+            "total_area": round(total_area, self.round_value),
             # "room_types": [r["room_type"] for r in spaces],
             "bubble_diagram": json.dumps(bubble_diagram),
             "rooms": random_spaces
@@ -151,7 +152,7 @@ class RPLANConverter:
 
 if __name__ == "__main__":
     converter = RPLANConverter()
-    ds = converter("datasets/rplan_json_test")
+    ds = converter("datasets/rplan_json")
     ds.save_to_disk("datasets/rplan_converted")
     print(ds)
     print("Done. Sample:", ds["train"][0])
