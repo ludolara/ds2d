@@ -1,4 +1,5 @@
 import os
+from src.utils.constants import OVERLAP_TOL
 from src.utils.json_repair import *
 from .polygon_object import Polygon
 from src.utils.json_check.verify import is_valid_json
@@ -134,39 +135,87 @@ class Floorplan():
 
     #     return overlap_ratio
     
-    def calculate_overlap_percentage(self, tol=1e-5, exclude_doors=True):
+    def calculate_overlap_percentage(self, tol=OVERLAP_TOL):
+        # rooms = self.get_rooms()
+        # polygons = {}
+
+        # for room in rooms:
+        #     # if exclude_doors and room.get("room_type") in ("front_door", "interior_door"):
+        #     #     continue
+        #     try:
+        #         room_id = room.get("id")
+        #         poly_points = room.get("floor_polygon", [])
+        #         if not poly_points or not room_id:
+        #             continue
+
+        #         points = [(float(pt["x"]), float(pt["y"])) for pt in poly_points]
+        #         poly = Poly(points)
+        #         if not poly.is_valid:
+        #             poly = poly.buffer(0)
+        #         if poly.is_valid and poly.area > tol:
+        #             polygons[room_id] = poly
+        #     except Exception:
+        #         continue
+
+        # total_overlap_area = 0.0
+        # ids = list(polygons)
+        # for i in range(len(ids)):
+        #     for j in range(i + 1, len(ids)):
+        #         p1, p2 = polygons[ids[i]], polygons[ids[j]]
+        #         if p1.intersects(p2):
+        #             inter = p1.intersection(p2)
+        #             if not inter.is_empty and inter.area > tol:
+        #                 total_overlap_area += inter.area
+
+        # total_floor_area = sum(p.area for p in polygons.values() if p.is_valid)
+        # return (total_overlap_area / total_floor_area) if total_floor_area > tol else 0
+
+
         rooms = self.get_rooms()
         polygons = {}
 
-        for room in rooms:
-            if exclude_doors and room.get("room_type") in ("front_door", "interior_door"):
-                continue
+        for idx, room in enumerate(rooms):
+            # if room.get("room_type") in ("front_door", "interior_door"):
+            #     continue
             try:
-                room_id = room.get("id")
+                room_id = str(room.get("id"))
                 poly_points = room.get("floor_polygon", [])
                 if not poly_points or not room_id:
                     continue
 
                 points = [(float(pt["x"]), float(pt["y"])) for pt in poly_points]
                 poly = Poly(points)
+
                 if not poly.is_valid:
                     poly = poly.buffer(0)
+
                 if poly.is_valid and poly.area > tol:
-                    polygons[room_id] = poly
+                    if room_id not in polygons:
+                        polygons[room_id] = poly
+                    else:
+                        room_id = f"{room_id}_{idx}"
+                        polygons[room_id] = poly
+
             except Exception:
                 continue
 
         total_overlap_area = 0.0
-        ids = list(polygons)
-        for i in range(len(ids)):
-            for j in range(i + 1, len(ids)):
-                p1, p2 = polygons[ids[i]], polygons[ids[j]]
-                if p1.intersects(p2):
-                    inter = p1.intersection(p2)
-                    if not inter.is_empty and inter.area > tol:
-                        total_overlap_area += inter.area
 
-        total_floor_area = sum(p.area for p in polygons.values() if p.is_valid)
+        room_ids = list(polygons.keys())
+        for i in range(len(room_ids)):
+            for j in range(i + 1, len(room_ids)):
+                id1 = room_ids[i]
+                id2 = room_ids[j]
+                poly1 = polygons[id1]
+                poly2 = polygons[id2]
+
+                if poly1.intersects(poly2):
+                    intersection = poly1.intersection(poly2)
+                    if not intersection.is_empty and intersection.area > tol:
+                        area = intersection.area
+                        total_overlap_area += area
+
+        total_floor_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
         return (total_overlap_area / total_floor_area) if total_floor_area > tol else 0
 
 

@@ -5,15 +5,15 @@ schema = {
     "room_count": {
       "type": "integer"
     },
-    "total_area": {
-      "type": "number"
-    },
-    "room_types": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
+    # "total_area": {
+    #   "type": "number"
+    # },
+    # "room_types": {
+    #   "type": "array",
+    #   "items": {
+    #     "type": "string"
+    #   }
+    # },
     "rooms": {
       "type": "array",
       "items": {
@@ -21,7 +21,8 @@ schema = {
         "additionalProperties": False,
         "properties": {
           "id": {
-            "type": ["string", "integer"]
+            # "type": ["string", "integer"]
+            "type": "string",
           },
           "room_type": {
             "type": "string"
@@ -29,13 +30,16 @@ schema = {
           "area": {
             "type": "number"
           },
-          "width": {
-            "type": "number"
-          },
-          "height": {
-            "type": "number"
-          },
-          "is_regular": {
+          # "width": {
+          #   "type": "number"
+          # },
+          # "height": {
+          #   "type": "number"
+          # },
+          # "is_regular": {
+          #   "type": "integer"
+          # },
+          "is_rectangular": {
             "type": "integer"
           },
           "floor_polygon": {
@@ -52,10 +56,10 @@ schema = {
                 "y": {
                   "type": "number"
                 }
-              },
-              "anyOf": [
-                {"required": ["x", "y"]}
-              ]
+              }
+              # "anyOf": [
+              #   {"required": ["x", "y"]}
+              # ]
             }
           }
         },
@@ -63,5 +67,6 @@ schema = {
       }
     },
   },
-  "required": ["room_count", "total_area", "room_types", "rooms"]
+  # "required": ["room_count", "total_area", "room_types", "rooms"]
+  "required": ["room_count", "rooms"]
 }

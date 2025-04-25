@@ -6,9 +6,9 @@ from src.utils import create_input
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
 from datasets import load_from_disk
+from src.utils.constants import SYSTEM_PROMPT, SYSTEM_RE_PROMPT
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
-from openai import OpenAI
 
 load_dotenv()
 CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE")
@@ -60,10 +60,7 @@ class FloorplanGenerator:
 
     def _build_prompt(self, sample):
         system_prompt = (
-            "you are to generate a floor plan in a JSON structure. "
-            "you have to satisfy the adjacency constraints given as pairs of neighboring rooms; "
-            "two connecting rooms are presented as (room_type1 room_id1, room_type2 room_id2). "
-            "you also need to satisfy additional constraints given by the user."
+            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_PROMPT} \n"
         )
         prompt = (
             f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
@@ -74,17 +71,15 @@ class FloorplanGenerator:
 
     def _build_re_prompt(self, sample, history=None):
         system_prompt = (
-            "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\nyou are to generate a floor plan in a JSON structure. "
-            "you have to satisfy the adjacency constraints given as pairs of neighboring rooms; "
-            "two connecting rooms are presented as (room_type1 room_id1, room_type2 room_id2). "
-            "you also need to satisfy additional constraints given by the user.\n"
+            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_RE_PROMPT} \n"
         )
 
         history_prompt = ""
         if history:
             for i, attempt in enumerate(history):
                 history_prompt += f"- Attempt {i + 1}:\n"
-                history_prompt += f"    Output: {json.dumps(attempt['output'])}\n"
+                if i == len(history) - 1:
+                    history_prompt += f"    Output: {json.dumps(attempt['output'])}\n"
                 history_prompt += f"    Feedback: {attempt.get('feedback', '[No feedback provided]')}\n"
 
             history_prompt = (
@@ -146,7 +141,7 @@ class FloorplanGenerator:
                     if (overlap_metrics["is_overlapping"] or 
                         not overlap_metrics["is_valid_json"] or 
                         not overlap_metrics["room_count"]["match"] or 
-                        not overlap_metrics["room_types"]["match"] or 
+                        # not overlap_metrics["room_types"]["match"] or 
                         not overlap_metrics["total_area"]["match"]):
                         current_feedback += FeedbackGenerator.create_feedback(overlap_metrics)
                     else:
@@ -179,6 +174,4 @@ class FloorplanGenerator:
                             for entry in histories[idx]
                         ]
                         json.dump(filtered_history, f, indent=4)
-
-
 

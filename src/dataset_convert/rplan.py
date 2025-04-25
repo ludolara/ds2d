@@ -1,7 +1,7 @@
+import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 from pathlib import Path
-import json
 from datasets import DatasetDict, Dataset
 from sklearn.model_selection import train_test_split
 from shapely.geometry import LineString
@@ -10,8 +10,7 @@ from shapely.affinity import scale
 from tqdm import tqdm
 from dataset_convert.rplan_graph import RPLANGraph
 from utils.constants import RPLAN_ROOM_CLASS
-from collections import Counter, defaultdict, OrderedDict
-import random
+from collections import Counter, defaultdict
 import networkx as nx
 
 @dataclass
@@ -43,11 +42,11 @@ class RPLANConverter:
             raise ValueError(f"Multiple polygons detected: {len(polys)}")
         return polys[0] 
 
-    def _shuffle_spaces(self, spaces: List[OrderedDict], seed: int = 42) -> List[Dict[str, Any]]:
-        random.seed(seed)
-        random_spaces = list(spaces)
-        random.shuffle(random_spaces)
-        return random_spaces
+    # def _shuffle_spaces(self, spaces: List[OrderedDict], seed: int = 42) -> List[Dict[str, Any]]:
+    #     random.seed(seed)
+    #     random_spaces = list(spaces)
+    #     random.shuffle(random_spaces)
+    #     return random_spaces
 
     def _convert_entry(self, data: Dict[str, Any]) -> Dict[str, Any]:
         counts = Counter(data["room_type"])
@@ -85,7 +84,7 @@ class RPLANConverter:
                 poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0,0))
                 area = round(poly.area, self.round_value)
                 minx, miny, maxx, maxy = poly.bounds
-                spaces.append(OrderedDict({
+                spaces.append({
                     **room,
                     "area": area,
                     "width": round(maxx - minx, self.round_value),
@@ -95,7 +94,7 @@ class RPLANConverter:
                         {"x": round(x, self.round_value), "y": round(y, self.round_value)}
                         for x, y in poly.exterior.coords[:-1]
                     ]
-                }))
+                })
                 total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
@@ -111,15 +110,16 @@ class RPLANConverter:
         if any(not neigh for neigh in bubble_diagram.values()) or not nx.is_connected(nx.from_dict_of_lists(bubble_diagram)):
             return None
         
-        random_spaces = self._shuffle_spaces(spaces)
+        # random_spaces = self._shuffle_spaces(spaces)
+        # spaces = [room for room in spaces if room["room_type"] not in ["interior_door", "front_door"]]
 
         return {
             "rplan_id": data.get("rplan_id"),
             "room_count": len(spaces),
             "total_area": round(total_area, self.round_value),
-            # "room_types": [r["room_type"] for r in spaces],
+            "room_types": [r["room_type"] for r in spaces],
             "bubble_diagram": json.dumps(bubble_diagram),
-            "rooms": random_spaces
+            "rooms": spaces
         }
 
     def create_dataset(self, raw: List[Dict[str, Any]]) -> DatasetDict:

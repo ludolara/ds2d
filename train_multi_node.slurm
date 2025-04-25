@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=ds2d-train
-#SBATCH --output=logs/train/job_output.log
-#SBATCH --error=logs/train/job_error.log
-#SBATCH --nodes=1
+#SBATCH --job-name=ds2d-train_no_doors
+#SBATCH --output=logs/train_no_doors/job_output.log
+#SBATCH --error=logs/train_no_doors/job_error.log
+#SBATCH --nodes=4
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=2:00:00
+#SBATCH --time=12:00:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -14,8 +14,8 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${2:-30} 
-OUTPUT_DIR="output/rplan_${EPOCHS}_70B/"
+EPOCHS=${1:-20} 
+OUTPUT_DIR="output/no_doors_rplan_${EPOCHS}_70B/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -32,12 +32,13 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --peft_method lora \
     --quantization 4bit \
     --model_name models/Llama-3.3-70B-Instruct \
+    --custom_dataset.data_path "datasets/rplan_converted_no_doors" \
+    --custom_dataset.file "src/train/floorplan_dataset_no_doors.py" \
     --batch_size_training 2 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
     --context_length 6144 \
     --enable_fsdp True \
-    --custom_dataset.file "src/train/floorplan_dataset.py" \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "floorplans"

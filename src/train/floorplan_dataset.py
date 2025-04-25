@@ -1,11 +1,9 @@
-from datasets import load_from_disk, concatenate_datasets
+from datasets import load_from_disk
 from utils.constants import SYSTEM_PROMPT
 from utils import create_input, create_output
 
 def get_custom_dataset(dataset_config, tokenizer, split):
-    rplan = load_from_disk('datasets/rplan_converted')[split]
-
-    dataset = concatenate_datasets([rplan])
+    dataset = load_from_disk(dataset_config.data_path)[split]
     dataset = dataset.shuffle(seed=42)
 
     def process_sample(sample):

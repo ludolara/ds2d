@@ -46,7 +46,7 @@ def remove_file(file_path):
             exit(1)
 
 def main():
-    folder = "./results_no_feedback_openai/generations/rplan/full_prompt/"
+    folder = "./results_no_feedback/generations/rplan_20_70B/full_prompt/"
     for entry in os.listdir(folder):
         folder_path = os.path.join(folder, entry)
         if os.path.isdir(folder_path):

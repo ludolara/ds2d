@@ -1,9 +1,10 @@
 from shapely.geometry import Polygon
+from src.utils.constants import OVERLAP_TOL
 from src.utils.json_check.verify import is_valid_json_feedback
 
 class FeedbackGenerator:
     @staticmethod
-    def analyze(output_floor_plan, input_prompt, tol=1e-6, area_tol=10):
+    def analyze(output_floor_plan, input_prompt, tol=OVERLAP_TOL, area_tol=15):
         rooms = output_floor_plan.get("rooms", [])
         polygons = {}
 
@@ -60,7 +61,7 @@ class FeedbackGenerator:
         )
 
         expected_room_count = input_prompt.get("room_count")
-        expected_room_types = input_prompt.get("room_types")
+        # expected_room_types = input_prompt.get("room_types")
         expected_total_area = input_prompt.get("total_area")
 
         actual_room_count = len(polygons)
@@ -74,7 +75,7 @@ class FeedbackGenerator:
         actual_total_area = total_floor_area
 
         room_count_match = (expected_room_count == actual_room_count) if expected_room_count is not None else None
-        room_types_match = (set(expected_room_types) == set(actual_room_types)) if expected_room_types is not None else None
+        # room_types_match = (set(expected_room_types) == set(actual_room_types)) if expected_room_types is not None else None
         total_area_match = (abs(expected_total_area - actual_total_area) <= area_tol) if (expected_total_area is not None and isinstance(expected_total_area, (int, float))) else None
 
         is_valid, feedback = is_valid_json_feedback(output_floor_plan)
@@ -86,7 +87,7 @@ class FeedbackGenerator:
             "is_valid_json": is_valid,
             "is_valid_json_feedback": feedback,
             "room_count": {"expected": expected_room_count, "actual": actual_room_count, "match": room_count_match},
-            "room_types": {"expected": expected_room_types, "actual": actual_room_types, "match": room_types_match},
+            # "room_types": {"expected": expected_room_types, "actual": actual_room_types, "match": room_types_match},
             "total_area": {"expected": expected_total_area, "actual": round(actual_total_area, 2), "tolerance": area_tol, "match": total_area_match},
         }
 
@@ -100,8 +101,8 @@ class FeedbackGenerator:
         else:
             if overlap_metrics["room_count"]["match"] is False:
                 feedback += f"Expected room count {overlap_metrics['room_count']['expected']}, but got {overlap_metrics['room_count']['actual']}. "
-            if overlap_metrics["room_types"]["match"] is False:
-                feedback += f"Expected room types {overlap_metrics['room_types']['expected']}, but got {overlap_metrics['room_types']['actual']}. "
+            # if overlap_metrics["room_types"]["match"] is False:
+            #     feedback += f"Expected room types {overlap_metrics['room_types']['expected']}, but got {overlap_metrics['room_types']['actual']}. "
             if overlap_metrics["total_area"]["match"] is False:
                 feedback += f"Expected total area {overlap_metrics['total_area']['expected']} square meters, but got {overlap_metrics['total_area']['actual']:.2f} square meters. "
 
@@ -121,11 +122,11 @@ class FeedbackGenerator:
                 feedback += "\nThe following overlaps have been detected:\n"
                 for pair, area in unique_pairs.items():
                     feedback += (
-                        f"  - Rooms {pair[0]} and {pair[1]} overlap by "
+                        f"  - {pair[0]} and {pair[1]} overlap by "
                         f"{area:.2f} square meters.\n"
                     )
-                # feedback += "Please revise the floor plan to remove these overlaps. \n"
-                feedback += "Revise the floor plan to eliminate any overlapping areas by repositioning and/or slightly adjusting the affected rooms so that each room is distinctly separated by clear boundaries. It is critical to remove all overlaps, as they compromise the design's integrity, clarity, and functionality. Make only the minimal changes necessary to resolve the overlaps while preserving the original design output, connectivity, and overall flow between spaces. \n"
+                feedback += "Please revise the floor plan to remove these overlaps. \n"
+                # feedback += "Revise the floor plan to eliminate any overlapping areas by repositioning and/or slightly adjusting the affected rooms so that each room is distinctly separated by clear boundaries. It is critical to remove all overlaps, as they compromise the design's integrity, clarity, and functionality. Make only the minimal changes necessary to resolve the overlaps while preserving the original design output, connectivity, and overall flow between spaces. \n"
 
         return feedback
     

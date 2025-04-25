@@ -200,7 +200,7 @@ class FloorplanGenerator:
                     if (overlap_metrics["is_overlapping"] or 
                         not overlap_metrics["is_valid_json"] or 
                         not overlap_metrics["room_count"]["match"] or 
-                        not overlap_metrics["room_types"]["match"] or 
+                        # not overlap_metrics["room_types"]["match"] or 
                         not overlap_metrics["total_area"]["match"]):
                         current_feedback += FeedbackGenerator.create_feedback(overlap_metrics)
                     else:

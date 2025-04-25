@@ -6,5 +6,6 @@ models/
 datasets/
 output/
 log*/
-results_*/
+results*/
 ds2d*/
+OLD*/

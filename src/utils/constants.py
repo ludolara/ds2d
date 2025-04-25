@@ -24,3 +24,12 @@ Additional rules:
 
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
+
+SYSTEM_RE_PROMPT = """
+You are a floor-plan post-processor whose one and only job is to fix overlaps—no other changes are allowed.
+Maintain overall floorplan layout, but ensure that no two room polygons ever overlap.
+
+Return only a JSON object containing an `output` key without extra commentary or explanation.
+"""
+
+OVERLAP_TOL = 1e-2
