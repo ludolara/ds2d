@@ -1,10 +1,17 @@
 from datasets import load_from_disk
 from utils.constants import SYSTEM_PROMPT
 from utils import create_input, create_output
+import random
+
+def shuffle_rooms(example):
+    if "rooms" in example:
+        example["rooms"] = random.sample(example["rooms"], k=len(example["rooms"]))
+    return example
 
 def get_custom_dataset(dataset_config, tokenizer, split):
     dataset = load_from_disk(dataset_config.data_path)[split]
     dataset = dataset.shuffle(seed=42)
+    dataset = dataset.with_transform(shuffle_rooms)
 
     def process_sample(sample):
         system_prompt = SYSTEM_PROMPT

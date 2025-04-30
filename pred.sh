@@ -18,8 +18,10 @@ source $SCRATCH/env/vllm/bin/activate
 TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
-    --batch_size 128 \
-    --lora_adapter_path "output/rplan_20_70B" \
-    --dataset_name_or_path "datasets/rplan_converted" \
-    --output_dir "results/generations/rplan_20_70B/full_prompt" \
+    --batch_size 8 \
+    --model_name_or_path "models/Llama-3.3-70B-Instruct" \
+    --lora_adapter_path "output/no_doors_rplan_20_70B" \
+    --feedback_iterations 5 \
+    --dataset_name_or_path "datasets/rplan_converted_no_doors" \
+    --output_dir "results/generations/no_doors_rplan_20_70B/full_prompt" \
     --test_range "$TEST_RANGE" \

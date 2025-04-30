@@ -44,7 +44,11 @@ class FloorplanGenerator:
         )
         self.lora_request = LoRARequest("floorplan_adapter", 1, self.lora_adapter_path)
         self.sampling_params = SamplingParams(
-            max_tokens=self.max_new_tokens
+            max_tokens=self.max_new_tokens,
+            temperature=0.7,
+            top_p=0.9,
+            n=1,
+            best_of=10,
         )
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]

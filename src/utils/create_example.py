@@ -4,7 +4,7 @@ def create_input(sample, is_str=True):
     inp = {
         "room_count": sample.get("room_count"),
         "total_area": sample.get("total_area"),
-        # "room_types": sample.get("room_types"),
+        "room_types": sample.get("room_types"),
         "rooms": [
             {
                 "id": room.get("id"),
