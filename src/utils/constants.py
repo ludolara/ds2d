@@ -32,4 +32,4 @@ Maintain overall floorplan layout, but ensure that no two room polygons ever ove
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
 
-OVERLAP_TOL = 1e-2
+OVERLAP_TOL = 1e-6

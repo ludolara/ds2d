@@ -20,26 +20,29 @@ def build_prompt(sample):
     )
     return prompt
 
-class PolygonValidator():
-    def __call__(self, input_ids, scores, logits):
-        if input_ids[0, -1] != tokenizer.eos_token_id and chr(input_ids[0, -1].item()) != '}':
-            return logits
+class PolygonStopProcessor():
+    def __init__(self, input_prompt, tokenizer):
+        self.input_prompt = input_prompt
+        self.tokenizer = tokenizer
+        self.eos_id = tokenizer.eos_token_id
 
-        txt = tokenizer.decode(input_ids[0].cpu().numpy())
+    def __call__(self, token_ids: list[int], logits):
+        # Decode the partial text
+        text = self.tokenizer.decode(token_ids, skip_special_tokens=True)
         try:
-            data = json.loads(txt.replace("'", '"'))["output"]
-            polys = [Polygon([(p["x"], p["y"]) for p in room["floor_polygon"]])
-                     for room in data["rooms"]]
-            for i in range(len(polys)):
-                for j in range(i+1, len(polys)):
-                    if polys[i].intersects(polys[j]) and not polys[i].touches(polys[j]):
-                        logits[:] = -float("inf")
-                        logits[tokenizer.eos_token_id] = 0.0
-                        return logits
+            # Extract the JSON output using your helper
+            output_data = extract_output_json(text)
+            # Analyze overlap using FeedbackGenerator
+            overlap = FeedbackGenerator.analyze(output_data, self.input_prompt)["total_overlap_area"]
+            # If overlap is zero, force end-of-sequence
+            if overlap == 0:
+                logits[:] = -1e9
+                logits[self.eos_id] = 0.0
         except Exception:
-            pass  
+            # If parsing fails, continue generating
+            pass
         return logits
-
+    
 # def polygon_validator(token_ids, logits):
 #     try:
 #         partial_text = tokenizer.decode(token_ids)  # You'd need the model's tokenizer
@@ -133,21 +136,21 @@ outputs = llm.generate(
 )
 
 res = select_least_overlap(outputs[0].outputs, create_input(dataset[3], is_str=False))
-print(res)
+print(res.text)
 
 # print(prompts[0])
 # print(outputs[0].outputs[0].text)
 
-for idx, completion in enumerate(outputs[0].outputs):
-    try:
-        json_str = completion.text.replace("'", '"')
-        data = json.loads(json_str)
-        output = data["output"]
+# for idx, completion in enumerate(outputs[0].outputs):
+#     try:
+#         json_str = completion.text.replace("'", '"')
+#         data = json.loads(json_str)
+#         output = data["output"]
 
-        input_prompt = create_input(dataset[3], is_str=False)
-        stats = FeedbackGenerator.analyze(output, input_prompt)
-        print(idx)
-        print(stats["total_overlap_area"])
-    except Exception as e:
-        print("Error:", e)
-        continue
+#         input_prompt = create_input(dataset[3], is_str=False)
+#         stats = FeedbackGenerator.analyze(output, input_prompt)
+#         print(idx)
+#         print(stats["total_overlap_area"])
+#     except Exception as e:
+#         print("Error:", e)
+#         continue

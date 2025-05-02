@@ -47,8 +47,8 @@ class FloorplanGenerator:
             max_tokens=self.max_new_tokens,
             temperature=0.7,
             top_p=0.9,
-            n=1,
-            best_of=10,
+            n=30,
+            best_of=30,
         )
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]
@@ -100,6 +100,15 @@ class FloorplanGenerator:
         )
 
         return re_prompt
+    
+    def _select_least_overlap(self, candidates, input_prompt):
+        return min(
+            candidates,
+            key=lambda cand: FeedbackGenerator.analyze(
+                extract_output_json(cand.text),
+                input_prompt
+            )['total_overlap_area']
+        )
 
     def generate_floorplans_with_feedback(self, feedback_iterations=3):
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans with feedback"):
@@ -122,8 +131,10 @@ class FloorplanGenerator:
                 )
 
                 for pos, idx in enumerate(unresolved_indices):
-                    generated_text = outputs[pos].outputs[0].text
-                    output_json = extract_output_json(generated_text)
+                    # generated_text = outputs[pos].outputs[0].text
+                    # output_json = extract_output_json(generated_text)
+                    output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
+                    output_json = extract_output_json(output_json.text)
                     # print(generated_text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
