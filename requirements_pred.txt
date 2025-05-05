@@ -8,3 +8,4 @@ datasets
 shapely
 typing_extensions
 trl
+wandb==0.17.9
