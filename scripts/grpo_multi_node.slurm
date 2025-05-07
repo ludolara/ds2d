@@ -44,6 +44,6 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --vllm_server_host $VLLM_NODE &
 
 # Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model models/ds2d-Llama-3.3-70B-Instruct --tensor_parallel_size 4 --max_model_len 4096 &
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model models/ds2d-Llama-3.3-70B-Instruct --tensor_parallel_size 4 --override-generation-config '{"max_new_tokens": 4096}' &
 
 wait
