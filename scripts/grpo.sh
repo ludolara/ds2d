@@ -6,7 +6,7 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=12:00:00
+#SBATCH --time=1:00:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -18,5 +18,4 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-# accelerate launch --num_processes 4 src/grpo/example_train_grpo.py 
-accelerate launch --config_file src/grpo/accelerate_configs/deepspeed_zero3.yaml src/grpo/train_grpo.py 
+accelerate launch --config_file src/grpo/accelerate_configs/deepspeed_zero3.yaml src/grpo/train_grpo_1.py 

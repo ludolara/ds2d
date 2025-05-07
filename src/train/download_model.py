@@ -9,9 +9,9 @@ load_dotenv()
 # snapshot_download(repo_id=model_repo_id, local_dir="models/Llama-4-Scout-17B-16E-Instruct")
 # print(f"Model downloaded to: models/Llama-4-Scout-17B-16E-Instruct")
 
-procthor = load_dataset("trl-lib/tldr")
+procthor = load_dataset("oops-all-pals/rplan_converted")
 print(f"Dataset downloaded to cache directory: datasets/")
-procthor.save_to_disk("datasets/tldr")
+procthor.save_to_disk("hf_datasets/rplan_converted")
 
 
 

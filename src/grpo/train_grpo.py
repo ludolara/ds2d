@@ -1,62 +1,92 @@
+import argparse
 from datasets import load_from_disk
+from src.utils import build_prompt
+from src.pred.extract_output_json import extract_output_json
+from src.pred.feedback_generator import FeedbackGenerator
 from trl import GRPOConfig, GRPOTrainer
 from dotenv import load_dotenv
 import wandb
 
 load_dotenv()
 wandb.init(project="floorplans", mode="offline")
-dataset = load_from_disk("datasets/tldr")["train"]
 
-def reward_len(completions, **kwargs):
-    return [-abs(20 - len(completion)) for completion in completions]
-
-training_args = GRPOConfig(
-    output_dir="output/test-GRPO",
-    bf16=True,
-    logging_steps=10,
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=8,
-    save_steps=100,
-    report_to="wandb"
-)
-
-trainer = GRPOTrainer(
-    model="models/Llama-3.1-8B-Instruct",
-    reward_funcs=reward_len,
-    args=training_args,
-    train_dataset=dataset,
-)
-trainer.train()
-
-# import argparse
-# from datasets import load_from_disk
-# from trl import GRPOTrainer, GRPOConfig
-
-# def main():
+def main():
     
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
-#     args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
+    args = parser.parse_args()
+    
+    # dataset = load_from_disk("datasets/tldr")["train"]
+    # def reward_len(completions, **kwargs):
+    #     return [-abs(20 - len(completion)) for completion in completions]
 
-#     # Example dataset from TLDR
-#     dataset = load_from_disk("datasets/tldr")["train"]
+    dataset = load_from_disk("hf_datasets/rplan_converted")["train"]
+    dataset = dataset.rename_column("input", "prompt")
+    dataset = dataset.map(lambda x: {"prompt": build_prompt(x["prompt"])})
 
-#     # Dummy reward function: count the number of unique characters in the completions
-#     def reward_num_unique_chars(completions, **kwargs):
-#         return [len(set(c)) for c in completions]
+    # def reward_overlap(completions, **kwargs):
+    #     rewards = []
+    #     prompt = kwargs.get("prompt", None)
 
-#     training_args = GRPOConfig(
-#         output_dir="test-GRPO",
-#         per_device_train_batch_size=1,
-#         bf16=True,
-#         gradient_checkpointing=True,
-#         logging_steps=10,
-#         use_vllm=True,
-#         vllm_server_host=args.vllm_server_host.replace("ip-", "").replace("-", "."),  # from ip-X-X-X-X to X.X.X.X
-#     )
+    #     for completion in completions:
+    #         try:
+    #             output_json = extract_output_json(completion)
+    #             print(output_json)
+    #             stats = FeedbackGenerator.analyze(output_json, prompt)
+    #             overlap = stats["total_overlap_area"]
+    #             rewards.append(-overlap)
 
-#     trainer = GRPOTrainer(model="models/Llama-3.1-8B-Instruct", args=training_args, reward_funcs=reward_num_unique_chars, train_dataset=dataset)
-#     trainer.train()
+    #         except Exception:
+    #             # parsing or analysis failed → heavy penalty
+    #             rewards.append(-1e6)
+    #     return rewards
 
-# if __name__=="__main__":
-#     main()
+    PENALTY_SCORE = -1e6
+
+    def reward_overlap(completions, **kwargs):
+        rewards = []
+        prompt = kwargs.get("prompt", None)
+
+        for completion in completions:
+            try:
+                output_json = extract_output_json(completion)
+                stats = FeedbackGenerator.analyze(output_json, prompt)
+
+                if not stats.get("is_valid_json", False):
+                    rewards.append(PENALTY_SCORE)
+                    continue
+
+                overlap = stats.get("total_overlap_area", float("inf"))
+                rewards.append(-overlap)
+
+            except Exception:
+                rewards.append(PENALTY_SCORE)
+
+        return rewards
+
+    training_args = GRPOConfig(
+        output_dir="output/test-GRPO_3.3",
+        per_device_train_batch_size=1,
+        num_generations=2,
+        gradient_accumulation_steps=8,
+        max_prompt_length=4096,
+        max_completion_length=4096,
+        bf16=True,
+        gradient_checkpointing=True,
+        logging_steps=500,
+        save_steps=1000,
+        report_to="wandb",
+        use_vllm=True,
+        vllm_server_host=args.vllm_server_host,
+    )
+
+    trainer = GRPOTrainer(
+        model="models/ds2d-Llama-3.3-70B-Instruct", 
+        args=training_args, 
+        reward_funcs=reward_overlap, 
+        train_dataset=dataset
+    )
+    trainer.train()
+
+if __name__=="__main__":
+    main()

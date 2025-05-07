@@ -63,12 +63,9 @@ class FloorplanGenerator:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def _build_prompt(self, sample):
-        system_prompt = (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_PROMPT} \n"
-        )
         prompt = (
             f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
-            f"{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
+            f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
             f"{create_input(sample)}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
         )
         return prompt

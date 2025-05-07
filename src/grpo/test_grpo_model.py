@@ -1,9 +1,6 @@
 from vllm import LLM, SamplingParams
-from vllm.lora.request import LoRARequest
 
-
-def build_prompt(sample):
-    SYSTEM_PROMPT = """
+SYSTEM_PROMPT = """
 You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
 Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
 Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
@@ -24,34 +21,23 @@ Additional rules:
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
 
-    system_prompt = (
-        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_PROMPT} \n"
-    )
+def build_prompt(sample):
     prompt = (
         f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
-        f"{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
+        f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
         f"{sample}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
     )
     return prompt
 
-model_path = "/home/l/luislara/links/scratch/ds2d_v2/models/ds2d-Llama-3.3-70B-Instruct"
-# lora_adapter_path = "/home/l/luislara/links/scratch/ds2d_v2/output/rplan_3_70B/"
+model = LLM(model="output/OLD_test-GRPO_3.3/checkpoint-1300")
+sampling_params = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=4096)
 
-model = LLM(model=model_path, tensor_parallel_size=4, device="cuda", 
-            # enable_lora=True
-        )
-# lora = LoRARequest("lora_adapter", 1, lora_adapter_path)
-sampling_params = SamplingParams(max_tokens=4096)
-
-# prompt = "You are a pirate, talk like a pirate. What is your name?"
 sample = """
 {'input': {'room_count': 10, 'total_area': 72.4, 'rooms': [{'id': 'living_room', 'room_type': 'living_room', 'width': 7.0, 'height': 5.2, 'is_rectangular': 0}, {'id': 'bedroom|0', 'room_type': 'bedroom', 'width': 3.6, 'height': 3.0, 'is_rectangular': 1}, {'id': 'bedroom|1', 'room_type': 'bedroom', 'width': 3.2, 'height': 4.1, 'is_rectangular': 1}, {'id': 'bathroom', 'room_type': 'bathroom', 'width': 2.2, 'height': 2.6, 'is_rectangular': 1}, {'id': 'kitchen', 'room_type': 'kitchen', 'width': 3.6, 'height': 2.6, 'is_rectangular': 1}, {'id': 'interior_door|0', 'room_type': 'interior_door', 'width': 1.5, 'height': 0.1, 'is_rectangular': 1}, {'id': 'interior_door|1', 'room_type': 'interior_door', 'width': 0.1, 'height': 0.6, 'is_rectangular': 1}, {'id': 'interior_door|2', 'room_type': 'interior_door', 'width': 1.5, 'height': 0.1, 'is_rectangular': 1}, {'id': 'interior_door|3', 'room_type': 'interior_door', 'width': 0.1, 'height': 0.8, 'is_rectangular': 1}, {'id': 'front_door', 'room_type': 'front_door', 'width': 0.1, 'height': 0.8, 'is_rectangular': 1}], 'bubble_diagram': {'living_room': ['bedroom|1', 'kitchen', 'bedroom|0'], 'bedroom|0': ['living_room'], 'bedroom|1': ['living_room'], 'bathroom': ['kitchen'], 'kitchen': ['living_room', 'bathroom']}}}
 """
-
 outputs = model.generate(
     [build_prompt(sample)], 
     sampling_params, 
     # lora_request=lora
 )
 print(outputs[0].outputs[0].text)
-

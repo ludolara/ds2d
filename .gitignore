@@ -4,6 +4,7 @@ __pycache__
 wandb/
 models/
 datasets/
+hf_datasets/
 output/
 log*/
 results*/
