@@ -29,7 +29,7 @@ def build_prompt(sample):
     )
     return prompt
 
-model = LLM(model="output/OLD_test-GRPO_3.3/checkpoint-1300")
+model = LLM(model="output/ds2d-GRPO_70B_7/checkpoint-100", tensor_parallel_size=4, device="cuda")
 sampling_params = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=4096)
 
 sample = """
@@ -38,6 +38,5 @@ sample = """
 outputs = model.generate(
     [build_prompt(sample)], 
     sampling_params, 
-    # lora_request=lora
 )
 print(outputs[0].outputs[0].text)

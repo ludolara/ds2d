@@ -1,6 +1,6 @@
 from shapely.geometry import Polygon
 from src.utils.constants import OVERLAP_TOL
-from src.utils.json_check.verify import is_valid_json_feedback
+from src.utils.json_check.verify import is_valid_json, is_valid_json_feedback
 
 class FeedbackGenerator:
     @staticmethod
@@ -130,3 +130,42 @@ class FeedbackGenerator:
 
         return feedback
     
+    @staticmethod
+    def grpo_feedback(output_floor_plan, input_prompt):
+        # Build valid room polygons
+        polygons = {}
+        for idx, room in enumerate(output_floor_plan.get("rooms", [])):
+            pts = room.get("floor_polygon") or []
+            try:
+                coords = [(float(p["x"]), float(p["y"])) for p in pts]
+                poly = Polygon(coords)
+                if not poly.is_valid:
+                    poly = poly.buffer(0)
+                if poly.is_valid and poly.area:
+                    room_id = str(room.get("id", idx))
+                    key = room_id if room_id not in polygons else f"{room_id}_{idx}"
+                    polygons[key] = poly
+            except Exception:
+                continue
+
+        # Compute total overlap area
+        total_overlap = 0.0
+        ids = list(polygons)
+        for i in range(len(ids)):
+            for j in range(i + 1, len(ids)):
+                inter = polygons[ids[i]].intersection(polygons[ids[j]])
+                # if inter.area > tol:
+                total_overlap += inter.area
+
+        total_area = sum(poly.area for poly in polygons.values())
+        # is_overlapping = total_overlap > tol
+        overlap_pct = (total_overlap / total_area * 100)
+        is_valid, feedback = is_valid_json_feedback(output_floor_plan)
+        print(f"Feedback: {feedback}")
+        # is_valid = is_valid_json(output_floor_plan)
+
+        return {
+            "is_valid_json": is_valid,
+            # "is_overlapping": is_overlapping,
+            "overlap_percentage": round(overlap_pct, 2)
+        }

@@ -1,13 +1,30 @@
 from src.pred.extract_output_json import extract_output_json
 from src.pred.feedback_generator import FeedbackGenerator
-from src.utils.constants import SYSTEM_PROMPT
 from src.utils.create_example import create_input
 from vllm import LLM, SamplingParams
-import json
-from shapely.geometry import Polygon
 from vllm.lora.request import LoRARequest
 from datasets import load_from_disk
-from transformers import AutoTokenizer
+
+SYSTEM_PROMPT = """
+You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
+Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
+Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
+
+Your output must be a JSON object, where `output` key contains:
+- `room_count`: the total number of room and door entries  
+- `rooms`: a list of mixing rooms and doors. Each room or door entry in `room` must include:
+ - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
+ - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
+ - `area` in square meters (all positive numbers)  
+ - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
+
+Additional rules:
+- **Absolute non-overlap**: no two room polygons may share any interior point under any circumstances.
+- Every adjacency in the bubble diagram must be bridged by exactly one door.  
+- Every `id` used in the bubble diagram and on any door must appear in the `rooms` list.  
+
+Return only a JSON object containing an `output` key without extra commentary or explanation.
+"""
 
 def build_prompt(sample):
     system_prompt = (
@@ -20,90 +37,15 @@ def build_prompt(sample):
     )
     return prompt
 
-class PolygonStopProcessor():
-    def __init__(self, input_prompt, tokenizer):
-        self.input_prompt = input_prompt
-        self.tokenizer = tokenizer
-        self.eos_id = tokenizer.eos_token_id
-
-    def __call__(self, token_ids: list[int], logits):
-        # Decode the partial text
-        text = self.tokenizer.decode(token_ids, skip_special_tokens=True)
-        try:
-            # Extract the JSON output using your helper
-            output_data = extract_output_json(text)
-            # Analyze overlap using FeedbackGenerator
-            overlap = FeedbackGenerator.analyze(output_data, self.input_prompt)["total_overlap_area"]
-            # If overlap is zero, force end-of-sequence
-            if overlap == 0:
-                logits[:] = -1e9
-                logits[self.eos_id] = 0.0
-        except Exception:
-            # If parsing fails, continue generating
-            pass
-        return logits
-    
-# def polygon_validator(token_ids, logits):
-#     try:
-#         partial_text = tokenizer.decode(token_ids)  # You'd need the model's tokenizer
-#         if is_valid_floor_plan(partial_text):
-#             # If valid, return logits unchanged
-#             return logits
-#         else:
-#             # If invalid (overlapping rooms detected), mask out all tokens except special ones
-#             # This effectively prevents the model from continuing with invalid configurations
-#             logits[:] = -9999.999
-#             # Optionally allow EOS token to be generated
-#             logits[tokenizer.eos_token_id] = 0.0
-#             return logits
-#     except:
-#         # If we can't parse or validate yet, let generation continue
-#         return logits
-
-# def is_valid_floor_plan(partial_text):
-#     try:
-#         # data = json.loads(partial_text + "}") if not partial_text.endswith("}") else json.loads(partial_text)
-#         json_str = partial_text.replace("'", '"')
-#         data = json.loads(json_str)
-#         data = data["output"]
-
-#         rooms = []
-#         for item in data.get("rooms", []):
-#             if "floor_polygon" in item and len(item["floor_polygon"]) >= 3:  
-#                 rooms.append(item)
-        
-#         for i, room1 in enumerate(rooms):
-#             poly1 = Polygon(room1["floor_polygon"])
-#             for j, room2 in enumerate(rooms):
-#                 if i >= j:  
-#                     continue
-                    
-#                 poly2 = Polygon(room2["floor_polygon"])
-#                 if poly1.intersects(poly2) and not poly1.touches(poly2):
-#                     return False
-                    
-#         return True
-#     except (json.JSONDecodeError, KeyError, TypeError):
-#         return True
-
 def select_least_overlap(candidates, input_prompt):
     return min(
         candidates,
         key=lambda cand: FeedbackGenerator.analyze(
-            # json.loads(cand.text.replace("'", '"'))['output'],
             extract_output_json(cand.text),
             input_prompt
         )['total_overlap_area']
     )
 
-# tokenizer = AutoTokenizer.from_pretrained("models/Llama-3.3-70B-Instruct")
-# def process_token(token_ids, logits):
-#     partial_text = tokenizer.decode(token_ids)
-#     print(partial_text)
-#     return logits
-
-# Usage with vLLM
-# llm = LLM(model="your-floor-plan-model")
 llm = LLM(
     model="models/Llama-3.3-70B-Instruct",
     tensor_parallel_size=4,
@@ -113,15 +55,12 @@ llm = LLM(
 print("Model loaded")
 lora_request = LoRARequest("floorplan_adapter", 1, "output/rplan_25_70B/")
 
-# Configure sampling with logits processor
 sampling_params = SamplingParams(
     temperature=0.7,
     top_p=0.9,
     max_tokens=4096,
     n=50,
-    best_of=50,
-    # presence_penalty=0.5,
-    # logits_processors=[process_token]
+    best_of=50
 )
 
 dataset = load_from_disk("datasets/rplan_converted")["test"]
@@ -138,19 +77,3 @@ outputs = llm.generate(
 res = select_least_overlap(outputs[0].outputs, create_input(dataset[3], is_str=False))
 print(res.text)
 
-# print(prompts[0])
-# print(outputs[0].outputs[0].text)
-
-# for idx, completion in enumerate(outputs[0].outputs):
-#     try:
-#         json_str = completion.text.replace("'", '"')
-#         data = json.loads(json_str)
-#         output = data["output"]
-
-#         input_prompt = create_input(dataset[3], is_str=False)
-#         stats = FeedbackGenerator.analyze(output, input_prompt)
-#         print(idx)
-#         print(stats["total_overlap_area"])
-#     except Exception as e:
-#         print("Error:", e)
-#         continue

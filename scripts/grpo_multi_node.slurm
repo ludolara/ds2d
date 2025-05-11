@@ -3,10 +3,10 @@
 #SBATCH --output=logs/train_grpo_7/job_output.log
 #SBATCH --error=logs/train_grpo_7/job_error.log
 #SBATCH --nodes=7
-#SBATCH --mem=128G
+#SBATCH --mem=512G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=2:59:00
+#SBATCH --time=23:59:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -14,7 +14,7 @@ module load opencv
 module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
-export LOGLEVEL=INFO
+export LOGLEVEL=DEBUG
 export WANDB_MODE=offline
 
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
@@ -41,9 +41,10 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
+     --output "output/ds2d-GRPO_70B_${NUM_NODES}" \
      --vllm_server_host $VLLM_NODE &
 
 # Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model models/ds2d-Llama-3.3-70B-Instruct --tensor_parallel_size 4 --override-generation-config '{"max_new_tokens": 4096}' &
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model models/ds2d-Llama-3.3-70B-Instruct --tensor_parallel_size 4 &
 
 wait

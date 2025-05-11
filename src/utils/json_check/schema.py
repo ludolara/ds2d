@@ -45,7 +45,7 @@ schema = {
           "floor_polygon": {
             "type": "array",
             "minItems": 3,
-            "maxItems": 30,
+            "maxItems": 15,
             "items": {
               "type": "object",
               "additionalProperties": False,
