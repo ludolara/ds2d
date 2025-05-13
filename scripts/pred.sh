@@ -10,6 +10,7 @@
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
+export VLLM_USE_V1=0
 
 module load python/3.11
 module load arrow
@@ -19,7 +20,7 @@ TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
     --batch_size 8 \
-    --model_name_or_path "models/ds2d-Llama-3.3-70B-Instruct" \
+    --model_name_or_path "output/OLD_ds2d-GRPO_70B_7/checkpoint-200" \
     --feedback_iterations 3 \
     --dataset_name_or_path "datasets/rplan_converted" \
     --output_dir "results/generations/rplan_25_70B/full_prompt" \

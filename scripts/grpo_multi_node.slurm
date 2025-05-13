@@ -3,7 +3,7 @@
 #SBATCH --output=logs/train_grpo_7/job_output.log
 #SBATCH --error=logs/train_grpo_7/job_error.log
 #SBATCH --nodes=7
-#SBATCH --mem=512G
+#SBATCH --mem=448G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
 #SBATCH --time=23:59:00

@@ -1,21 +1,23 @@
 #!/bin/bash
 #SBATCH --job-name=ds2d-train-random
-#SBATCH --output=logs/train_random/job_output.log
-#SBATCH --error=logs/train_random/job_error.log
+#SBATCH --output=logs/train/job_output.log
+#SBATCH --error=logs/train/job_error.log
 #SBATCH --nodes=4
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=24:00:00
+#SBATCH --time=23:59:00
 #SBATCH --account=aip-pal
+
+export PYTHONPATH="$PYTHONPATH:/."
 
 module load python/3.11
 module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-25} 
-OUTPUT_DIR="output/rplan_${EPOCHS}_70B/"
+EPOCHS=${1:-30} 
+OUTPUT_DIR="output/v3_${EPOCHS}/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -31,17 +33,16 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --use_peft \
     --peft_method lora \
     --quantization 4bit \
-    --model_name models/Llama-3.3-70B-Instruct \
+    --model_name models/Llama-3.1-8B-Instruct \
     --use_peft True \
-    --from_peft_checkpoint "output/rplan_25_70B" \
-    --custom_dataset.data_path "datasets/rplan_converted" \
+    --custom_dataset.data_path "datasets/rplan_converted_no_doors" \
     --custom_dataset.file "src/train/floorplan_dataset.py" \
-    --batch_size_training 2 \
+    --batch_size_training 8 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
-    --context_length 6144 \
+    --context_length 4096 \
     --enable_fsdp True \
-    --num_workers_dataloader 48 \
+    --num_workers_dataloader 32 \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "floorplans"

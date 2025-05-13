@@ -27,7 +27,7 @@ class FloorplanGenerator:
         output_dir="outputs"
     ):
         self.model_name_or_path = model_name_or_path
-        self.enable_lora = lora_adapter_path is not None
+        self.enable_lora = lora_adapter_path
         self.lora_adapter_path = lora_adapter_path
         self.dataset_name_or_path = dataset_name_or_path
         self.test_split = test_split
@@ -49,12 +49,13 @@ class FloorplanGenerator:
             )
         else:
             self.lora_request = None
+
         self.sampling_params = SamplingParams(
             max_tokens=self.max_new_tokens,
             temperature=0.7,
             top_p=0.9,
-            n=30,
-            best_of=30,
+            n=15,
+            best_of=15,
         )
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]
@@ -127,11 +128,18 @@ class FloorplanGenerator:
                     break
 
                 batch_prompts = [current_prompts[idx] for idx in unresolved_indices]
+
+                # if self.lora_request:
                 outputs = self.model.generate(
                     batch_prompts,
                     self.sampling_params,
                     lora_request=self.lora_request
                 )
+                # else:
+                #     outputs = self.model.generate(
+                #         batch_prompts,
+                #         self.sampling_params
+                #     )
 
                 for pos, idx in enumerate(unresolved_indices):
                     output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))

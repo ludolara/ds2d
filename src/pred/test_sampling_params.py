@@ -8,23 +8,24 @@ from datasets import load_from_disk
 SYSTEM_PROMPT = """
 You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
 Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
-Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
+Your top priority is that no two room polygons ever overlap. Room interiors must be strictly disjoint.
 
-Your output must be a JSON object, where `output` key contains:
-- `room_count`: the total number of room and door entries  
-- `rooms`: a list of mixing rooms and doors. Each room or door entry in `room` must include:
- - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
- - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
- - `area` in square meters (all positive numbers)  
- - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
+Your output must be a JSON object, where the `output` key contains:
+- `room_count`: the total number of room entries  
+- `rooms`: a list of rooms. Each entry must include:
+  - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"`)  
+  - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
+  - `area`: in square meters (all positive numbers)  
+  - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
 
 Additional rules:
 - **Absolute non-overlap**: no two room polygons may share any interior point under any circumstances.
-- Every adjacency in the bubble diagram must be bridged by exactly one door.  
-- Every `id` used in the bubble diagram and on any door must appear in the `rooms` list.  
+- Every adjacency in the bubble diagram must be represented by rooms touching along shared edges.
+- Every `id` used in the bubble diagram must appear in the `rooms` list.
 
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
+
 
 def build_prompt(sample):
     system_prompt = (
@@ -47,13 +48,13 @@ def select_least_overlap(candidates, input_prompt):
     )
 
 llm = LLM(
-    model="models/Llama-3.3-70B-Instruct",
+    model="models/Llama-3.1-8B-Instruct",
     tensor_parallel_size=4,
     device="cuda",
     enable_lora=True
 )
 print("Model loaded")
-lora_request = LoRARequest("floorplan_adapter", 1, "output/rplan_25_70B/")
+lora_request = LoRARequest("floorplan_adapter", 1, "output/rplan_30_8B_no_doors/")
 
 sampling_params = SamplingParams(
     temperature=0.7,
@@ -63,7 +64,7 @@ sampling_params = SamplingParams(
     best_of=50
 )
 
-dataset = load_from_disk("datasets/rplan_converted")["test"]
+dataset = load_from_disk("datasets/rplan_converted_no_doors")["test"]
 prompts = [
     build_prompt(dataset[3])
 ]
@@ -77,3 +78,4 @@ outputs = llm.generate(
 res = select_least_overlap(outputs[0].outputs, create_input(dataset[3], is_str=False))
 print(res.text)
 
+# print(outputs[0].outputs[0].text)

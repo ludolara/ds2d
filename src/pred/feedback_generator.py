@@ -132,7 +132,6 @@ class FeedbackGenerator:
     
     @staticmethod
     def grpo_feedback(output_floor_plan, input_prompt):
-        # Build valid room polygons
         polygons = {}
         for idx, room in enumerate(output_floor_plan.get("rooms", [])):
             pts = room.get("floor_polygon") or []
@@ -154,18 +153,30 @@ class FeedbackGenerator:
         for i in range(len(ids)):
             for j in range(i + 1, len(ids)):
                 inter = polygons[ids[i]].intersection(polygons[ids[j]])
-                # if inter.area > tol:
                 total_overlap += inter.area
 
-        total_area = sum(poly.area for poly in polygons.values())
-        # is_overlapping = total_overlap > tol
-        overlap_pct = (total_overlap / total_area * 100)
+        total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
+        overlap_ratio = total_overlap / total_area
         is_valid, feedback = is_valid_json_feedback(output_floor_plan)
         print(f"Feedback: {feedback}")
-        # is_valid = is_valid_json(output_floor_plan)
+
+        expected_room_count = input_prompt.get("room_count", 0)
+        expected_total_area = input_prompt.get("total_area", 0)
+
+        if expected_room_count > 0:
+            actual_room_count = len(polygons)
+            room_count_ratio = actual_room_count / expected_room_count
+        else:
+            room_count_ratio = 0 
+
+        if expected_total_area > 0:
+            total_area_ratio = total_area / expected_total_area
+        else:
+            total_area_ratio = 0 
 
         return {
             "is_valid_json": is_valid,
-            # "is_overlapping": is_overlapping,
-            "overlap_percentage": round(overlap_pct, 2)
+            "overlap": round(overlap_ratio, 2),
+            "room_count": round(room_count_ratio, 2),
+            "total_area": round(total_area_ratio, 2)
         }

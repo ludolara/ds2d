@@ -9,27 +9,30 @@
 #SBATCH --time=03:00:00
 #SBATCH --account=aip-bengioy
 
+export PYTHONPATH="$PYTHONPATH:/."
+
 module load python/3.11
 module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${2:-30} 
-OUTPUT_DIR="output/procthor_${EPOCHS}/"
+OUTPUT_DIR="output/v3_${EPOCHS}/"
 
 export WANDB_MODE=offline
 
-torchrun --nnodes 1 --nproc_per_node 4 finetuning.py \
+torchrun --nnodes 1 --nproc_per_node 4 ./src/train/finetuning.py \
     --use_peft \
     --peft_method lora \
     --quantization 4bit \
-    --model_name models/Llama-3.3-70B-Instruct \
+    --model_name models/Llama-3.1-8B-Instruct \
+    --custom_dataset.data_path "datasets/rplan_converted_no_doors" \
     --batch_size_training 2 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
     --context_length 4096 \
     --enable_fsdp True \
-    --custom_dataset.file "floorplan_dataset.py" \
+    --custom_dataset.file "src/train/floorplan_dataset.py" \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "floorplans"
