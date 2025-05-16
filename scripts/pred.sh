@@ -20,8 +20,8 @@ TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
     --batch_size 8 \
-    --model_name_or_path "output/OLD_ds2d-GRPO_70B_7/checkpoint-200" \
-    --feedback_iterations 3 \
+    --model_name_or_path "output/ds2d-GRPO_70B_7/checkpoint-450" \
+    --feedback_iterations 1 \
     --dataset_name_or_path "datasets/rplan_converted" \
     --output_dir "results/generations/rplan_25_70B/full_prompt" \
     --test_range "$TEST_RANGE" \

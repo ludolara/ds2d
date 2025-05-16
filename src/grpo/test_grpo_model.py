@@ -1,46 +1,26 @@
 from vllm import LLM, SamplingParams
 
-# SYSTEM_PROMPT = """
-# You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
-# Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
-# Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
-
-# Your output must be a JSON object, where `output` key contains:
-# - `room_count`: the total number of room and door entries  
-# - `rooms`: a list of mixing rooms and doors. Each room or door entry in `room` must include:
-#  - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
-#  - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
-#  - `area` in square meters (all positive numbers)  
-#  - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
-
-# Additional rules:
-# - **Absolute non-overlap**: no two room polygons may share any interior point under any circumstances.
-# - Every adjacency in the bubble diagram must be bridged by exactly one door.  
-# - Every `id` used in the bubble diagram and on any door must appear in the `rooms` list.  
-
-# Return only a JSON object containing an `output` key without extra commentary or explanation.
-# """
-
 SYSTEM_PROMPT = """
 You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
 Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
-Your top priority is that no two room polygons ever overlap. Room interiors must be strictly disjoint.
+Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
 
-Your output must be a JSON object, where the `output` key contains:
-- `room_count`: the total number of room entries  
-- `rooms`: a list of rooms. Each entry must include:
-  - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"`)  
-  - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
-  - `area`: in square meters (all positive numbers)  
-  - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
+Your output must be a JSON object, where `output` key contains:
+- `room_count`: the total number of room and door entries  
+- `rooms`: a list of mixing rooms and doors. Each room or door entry in `room` must include:
+ - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
+ - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
+ - `area` in square meters (all positive numbers)  
+ - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
 
 Additional rules:
 - **Absolute non-overlap**: no two room polygons may share any interior point under any circumstances.
-- Every adjacency in the bubble diagram must be represented by rooms touching along shared edges.
-- Every `id` used in the bubble diagram must appear in the `rooms` list.
+- Every adjacency in the bubble diagram must be bridged by exactly one door.  
+- Every `id` used in the bubble diagram and on any door must appear in the `rooms` list.  
 
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
+
 
 def build_prompt(sample):
     prompt = (
@@ -50,7 +30,7 @@ def build_prompt(sample):
     )
     return prompt
 
-model = LLM(model="output/OLD_ds2d-GRPO_70B_7/checkpoint-200", tensor_parallel_size=4, device="cuda")
+model = LLM(model="output/OLD_3_ds2d-GRPO_70B_7/checkpoint-350", tensor_parallel_size=4, device="cuda")
 sampling_params = SamplingParams(temperature=0.7, top_p=0.9, max_tokens=10000)
 
 sample = """

@@ -10,44 +10,6 @@ import wandb
 load_dotenv()
 wandb.init(project="floorplans", mode="offline")
 
-# def calculate_room_count_reward(stats) -> float:
-#     room_count_ratio = stats.get("room_count", 1.0) 
-#     return 1 if room_count_ratio == 1.0 else 1 - abs(room_count_ratio - 1)
-
-# def calculate_total_area_reward(stats) -> float:
-#     total_area_ratio = stats.get("total_area", 1.0) 
-#     return 1 if total_area_ratio == 1.0 else 1 - abs(total_area_ratio - 1)
-
-# def calculate_overlap_reward(stats) -> float:
-#     overlap_ratio = stats.get("overlap", 1.0)
-#     return 1 if overlap_ratio == 0.0 else 1 - overlap_ratio
-
-# def reward_overlap(completions, prompts, **kwargs):
-#     rewards = []
-
-#     for completion, prompt in zip(completions, prompts):
-#         try:
-#             output_json = extract_output_json(completion)
-#             stats = FeedbackGenerator.grpo_feedback(output_json, prompt)
-            
-#             if not stats.get("is_valid_json", False):
-#                 rewards.append([0, 0, 0, 0])
-#                 continue
-
-#             room_count_reward = calculate_room_count_reward(stats)
-#             total_area_reward = calculate_total_area_reward(stats)
-#             overlap_reward = calculate_overlap_reward(stats)
-
-#             rewards.append([1, room_count_reward, total_area_reward, overlap_reward])
-
-#         except Exception:
-#             rewards.append([0, 0, 0, 0])
-
-#     return rewards
-
-# put this exp[ception] in feedbacck
-# remove extract_output 
-
 def _safe_feedback(c, p):
     try:
         return FeedbackGenerator.grpo_feedback(
@@ -111,12 +73,23 @@ def make_reward_funcs():
         ]
         print(rewards)
         return rewards
+    
+    def compactness_reward(completions, **kwargs):
+        stats_list = compute_stats(completions, **kwargs)
+        rewards = [
+            0.0 if not s.get("is_valid_json", False)
+            else 1.0 if (a := s.get("compactness", 0.0)) == 1.0 else 1.0 - abs(a - 1.0)
+            for s in stats_list
+        ]
+        print(rewards)
+        return rewards
 
     return [
         json_validity_reward,
         room_count_reward,
         total_area_reward,
         overlap_reward,
+        compactness_reward
     ]
 
 def main():    
@@ -126,14 +99,14 @@ def main():
     args = parser.parse_args()
 
     dataset = (
-        load_from_disk("hf_datasets/rplan_converted")["train"]
+        load_from_disk("hf_datasets/rplan_converted_no_doors")["train"]
         .rename_column("input", "prompt")
         .map(lambda x: {"prompt": build_prompt(x["prompt"])})
     )
 
     training_args = GRPOConfig(
         output_dir=args.output,
-        per_device_train_batch_size=1,
+        # per_device_train_batch_size=1,
         # num_generations=2,
         # gradient_accumulation_steps=4,
         max_prompt_length=4096,

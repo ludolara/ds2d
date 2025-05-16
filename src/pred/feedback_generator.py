@@ -1,6 +1,7 @@
 from shapely.geometry import Polygon
 from src.utils.constants import OVERLAP_TOL
 from src.utils.json_check.verify import is_valid_json, is_valid_json_feedback
+from shapely.ops import unary_union
 
 class FeedbackGenerator:
     @staticmethod
@@ -131,7 +132,7 @@ class FeedbackGenerator:
         return feedback
     
     @staticmethod
-    def grpo_feedback(output_floor_plan, input_prompt):
+    def grpo_feedback(output_floor_plan, input_prompt, round_digits: int = 4):
         polygons = {}
         for idx, room in enumerate(output_floor_plan.get("rooms", [])):
             pts = room.get("floor_polygon") or []
@@ -174,9 +175,15 @@ class FeedbackGenerator:
         else:
             total_area_ratio = 0 
 
+        compactness_threshold = 0.8
+        union_poly = unary_union(list(polygons.values()))
+        compactness = union_poly.area / union_poly.convex_hull.area
+        scaled_compactness = min(compactness / compactness_threshold, 1.0)
+
         return {
             "is_valid_json": is_valid,
-            "overlap": round(overlap_ratio, 2),
-            "room_count": round(room_count_ratio, 2),
-            "total_area": round(total_area_ratio, 2)
+            "room_count": round(room_count_ratio, round_digits),
+            "total_area": round(total_area_ratio, round_digits),
+            "overlap": round(overlap_ratio, round_digits),
+            "compactness": round(scaled_compactness, round_digits)
         }

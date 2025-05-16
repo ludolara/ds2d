@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=ds2d-grpo
-#SBATCH --output=logs/train_grpo_7/job_output.log
-#SBATCH --error=logs/train_grpo_7/job_error.log
+#SBATCH --job-name=train-grpo
+#SBATCH --output=logs/train_grpo/job_output.log
+#SBATCH --error=logs/train_grpo/job_error.log
 #SBATCH --nodes=7
 #SBATCH --mem=448G
 #SBATCH --cpus-per-gpu=3
@@ -41,7 +41,7 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
-     --output "output/ds2d-GRPO_70B_${NUM_NODES}" \
+     --output "output/llama4-GRPO_${NUM_NODES}" \
      --vllm_server_host $VLLM_NODE &
 
 # Run vLLM server on the last node 

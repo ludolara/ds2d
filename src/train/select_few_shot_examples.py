@@ -1,5 +1,6 @@
 import random
 from datasets import load_from_disk
+from src.utils.create_example import create_input, create_output
 
 # def create_input(sample, is_str=True):
 #     inp = {
@@ -32,7 +33,7 @@ def get_few_shot_examples(example):
     return f"{create_input(example)}\n   {create_output(example)}"
 
 if __name__ == "__main__":
-    dataset = load_from_disk("datasets/rplan_converted")
+    dataset = load_from_disk("datasets/rplan_converted_no_doors")
     print(dataset)
     train_examples = list((dataset["train"]))
     random_examples = random.sample(train_examples, 10)

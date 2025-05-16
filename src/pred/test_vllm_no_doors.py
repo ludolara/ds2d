@@ -1,11 +1,8 @@
-from src.pred.extract_output_json import extract_output_json
-from src.pred.feedback_generator import FeedbackGenerator
-from src.utils.create_example import create_input
 from vllm import LLM, SamplingParams
-# from vllm.lora.request import LoRARequest
-from datasets import load_from_disk
+from vllm.lora.request import LoRARequest
 
-SYSTEM_PROMPT = """
+def build_prompt(sample):
+    SYSTEM_PROMPT = """
 You are a state-of-the-art floor-plan generator that translates JSON specifications and connectivity requirements defined by a bubble diagram into precise, optimized layouts. 
 Your algorithm considers each room's dimensions, proportion, and desired adjacencies to produce an efficient arrangement that maximizes usable space while honoring all constraints.
 Your top priority is that no two room polygons ever overlap. Rooms must be strictly disjoint, doors may touch room boundaries, but room interiors must never intersect.  
@@ -37,60 +34,35 @@ These are 3 examples of the expected output:
    Return only a JSON object containing an `output` key without extra commentary or explanation. Veriify with code if it has overlaps if yes try again.
 """
 
-def build_prompt(sample):
     system_prompt = (
-        f"<|begin_of_text|><|header_start|>system<|header_end|>\n {SYSTEM_PROMPT} \n"
+        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_PROMPT} \n"
     )
     prompt = (
-        f"<|begin_of_text|><|header_start|>system<|header_end|>\n"
-        f"{system_prompt}<|eot_id|><|header_start|>user<|header_end|>\n"
-        f"{create_input(sample)}<|eot_id|><|header_start|>assistant<|header_end|>\n"
+        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
+        f"{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
+        f"{sample}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
     )
     return prompt
 
-def select_least_overlap(candidates, input_prompt):
-    return min(
-        candidates,
-        key=lambda cand: FeedbackGenerator.analyze(
-            extract_output_json(cand.text),
-            input_prompt
-        )['total_overlap_area']
-    )
+model_path = "models/Llama-4-Scout-17B-16E-Instruct"
+# lora_adapter_path = "/home/l/luislara/links/scratch/ds2d_v2/output/rplan_3_70B/"
 
-llm = LLM(
-    model="models/Llama-4-Scout-17B-16E-Instruct",
-    tensor_parallel_size=4,
-    device="cuda",
-    max_model_len=100_000, 
-    override_generation_config= {
-        "attn_temperature_tuning": True,
-    }
-    # max_lora_rank=32,
-    # enable_lora=True
+model = LLM(model=model_path, tensor_parallel_size=4, device="cuda", max_model_len=100_000, 
+            override_generation_config= {
+                "attn_temperature_tuning": True,
+            }
+            # enable_lora=True
+        )
+# lora = LoRARequest("lora_adapter", 1, lora_adapter_path)
+sampling_params = SamplingParams(max_tokens=4096)
+
+sample = """
+{'input': {'room_count': 5, 'total_area': 64.4, 'room_types': ['bedroom', 'living_room', 'bedroom', 'kitchen', 'bathroom'], 'rooms': [{'id': 'bedroom|0', 'room_type': 'bedroom', 'width': 3.0, 'height': 4.9, 'is_rectangular': 1}, {'id': 'living_room', 'room_type': 'living_room', 'width': 5.9, 'height': 5.1, 'is_rectangular': 0}, {'id': 'bedroom|1', 'room_type': 'bedroom', 'width': 2.7, 'height': 3.7, 'is_rectangular': 1}, {'id': 'kitchen', 'room_type': 'kitchen', 'width': 2.7, 'height': 2.7, 'is_rectangular': 1}, {'id': 'bathroom', 'room_type': 'bathroom', 'width': 1.7, 'height': 3.3, 'is_rectangular': 1}], 'bubble_diagram': {'bedroom|0': ['living_room'], 'living_room': ['bedroom|0', 'bathroom', 'bedroom|1', 'kitchen'], 'bedroom|1': ['living_room'], 'kitchen': ['living_room'], 'bathroom': ['living_room']}}}
+"""
+
+outputs = model.generate(
+    [build_prompt(sample)], 
+    sampling_params, 
+    # lora_request=lora
 )
-print("Model loaded")
-# lora_request = LoRARequest("floorplan_adapter", 1, "output/rplan_30_8B_no_doors_r_32/")
-
-sampling_params = SamplingParams(
-    temperature=0.7,
-    top_p=0.9,
-    max_tokens=4096,
-    n=50,
-    best_of=50
-)
-
-dataset = load_from_disk("datasets/rplan_converted_no_doors")["test"]
-prompts = [
-    build_prompt(dataset[3])
-]
-
-outputs = llm.generate(
-    prompts,
-    sampling_params,
-    # lora_request=lora_request
-)
-
-res = select_least_overlap(outputs[0].outputs, create_input(dataset[3], is_str=False))
-print(res.text)
-
-# print(outputs[0].outputs[0].text)
+print(outputs[0].outputs[0].text)
