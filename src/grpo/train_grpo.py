@@ -3,6 +3,7 @@ from datasets import load_from_disk
 from src.utils import build_prompt
 from src.pred.extract_output_json import extract_output_json
 from src.pred.feedback_generator import FeedbackGenerator
+from src.utils.create_example import build_prompt_llama4
 from trl import GRPOConfig, GRPOTrainer
 from dotenv import load_dotenv
 import wandb
@@ -12,6 +13,7 @@ wandb.init(project="floorplans", mode="offline")
 
 def _safe_feedback(c, p):
     try:
+        # TODO: remove extract_output_json with llama4
         return FeedbackGenerator.grpo_feedback(
             extract_output_json(c),
             p
@@ -51,7 +53,7 @@ def make_reward_funcs():
             else 1.0 if (r := s.get("room_count", 0.0)) == 1.0 else 1.0 - abs(r - 1.0)
             for s in stats_list
         ]
-        print(rewards)
+        # print(rewards)
         return rewards
 
     def total_area_reward(completions, **kwargs):
@@ -61,7 +63,7 @@ def make_reward_funcs():
             else 1.0 if (a := s.get("total_area", 0.0)) == 1.0 else 1.0 - abs(a - 1.0)
             for s in stats_list
         ]
-        print(rewards)
+        # print(rewards)
         return rewards
 
     def overlap_reward(completions, **kwargs):
@@ -71,7 +73,7 @@ def make_reward_funcs():
             else 1.0 if (o := s.get("overlap", 1.0)) == 0.0 else 1.0 - o
             for s in stats_list
         ]
-        print(rewards)
+        # print(rewards)
         return rewards
     
     def compactness_reward(completions, **kwargs):
@@ -81,7 +83,7 @@ def make_reward_funcs():
             else 1.0 if (a := s.get("compactness", 0.0)) == 1.0 else 1.0 - abs(a - 1.0)
             for s in stats_list
         ]
-        print(rewards)
+        # print(rewards)
         return rewards
 
     return [
@@ -94,20 +96,22 @@ def make_reward_funcs():
 
 def main():    
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=str, default="output/ds2d-GRPO_70B", help="Folder to save the model")
+    parser.add_argument("--output", type=str, default="output/llama4-GRPO", help="Folder to save the model")
+    parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
+    parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
     args = parser.parse_args()
 
     dataset = (
-        load_from_disk("hf_datasets/rplan_converted_no_doors")["train"]
+        load_from_disk(args.dataset)["train"]
         .rename_column("input", "prompt")
-        .map(lambda x: {"prompt": build_prompt(x["prompt"])})
+        .map(lambda x: {"prompt": build_prompt_llama4(x["prompt"])})
     )
 
     training_args = GRPOConfig(
         output_dir=args.output,
         # per_device_train_batch_size=1,
-        # num_generations=2,
+        # num_generations=16,
         # gradient_accumulation_steps=4,
         max_prompt_length=4096,
         max_completion_length=4096,
@@ -124,7 +128,7 @@ def main():
     )
 
     trainer = GRPOTrainer(
-        model="models/ds2d-Llama-3.3-70B-Instruct", 
+        model=args.model, 
         args=training_args, 
         reward_funcs=make_reward_funcs(), 
         train_dataset=dataset

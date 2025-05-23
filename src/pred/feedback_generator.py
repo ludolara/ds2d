@@ -159,7 +159,7 @@ class FeedbackGenerator:
         total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
         overlap_ratio = total_overlap / total_area
         is_valid, feedback = is_valid_json_feedback(output_floor_plan)
-        print(f"Feedback: {feedback}")
+        # print(f"Feedback: {feedback}")
 
         expected_room_count = input_prompt.get("room_count", 0)
         expected_total_area = input_prompt.get("total_area", 0)
@@ -175,9 +175,9 @@ class FeedbackGenerator:
         else:
             total_area_ratio = 0 
 
-        compactness_threshold = 0.8
         union_poly = unary_union(list(polygons.values()))
         compactness = union_poly.area / union_poly.convex_hull.area
+        compactness_threshold = 0.8
         scaled_compactness = min(compactness / compactness_threshold, 1.0)
 
         return {
@@ -185,5 +185,6 @@ class FeedbackGenerator:
             "room_count": round(room_count_ratio, round_digits),
             "total_area": round(total_area_ratio, round_digits),
             "overlap": round(overlap_ratio, round_digits),
+            # "compactness": round(compactness, round_digits)
             "compactness": round(scaled_compactness, round_digits)
         }

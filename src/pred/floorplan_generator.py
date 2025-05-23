@@ -41,7 +41,8 @@ class FloorplanGenerator:
             model=self.model_name_or_path,
             tensor_parallel_size=4,
             device=self.device,
-            enable_lora=self.enable_lora
+            enable_lora=self.enable_lora,
+            max_lora_rank=32
         )
         if self.enable_lora:
             self.lora_request = LoRARequest(
@@ -54,8 +55,8 @@ class FloorplanGenerator:
             max_tokens=self.max_new_tokens,
             temperature=0.7,
             top_p=0.9,
-            n=15,
-            best_of=15,
+            n=30,
+            best_of=30,
         )
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]

@@ -20,17 +20,17 @@ TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
     --batch_size 8 \
-    --model_name_or_path "output/ds2d-GRPO_70B_7/checkpoint-450" \
+    --model_name_or_path "output/8B-GRPO_3/checkpoint-150" \
     --feedback_iterations 1 \
-    --dataset_name_or_path "datasets/rplan_converted" \
+    --dataset_name_or_path "datasets/rplan_converted_no_doors" \
     --output_dir "results/generations/rplan_25_70B/full_prompt" \
     --test_range "$TEST_RANGE" \
 
 # python src/pred/run_generation.py \
 #     --batch_size 8 \
-#     --model_name_or_path "models/Llama-3.3-70B-Instruct" \
-#     --lora_adapter_path "output/rplan_25_70B" \
-#     --feedback_iterations 3 \
-#     --dataset_name_or_path "datasets/rplan_converted" \
+#     --model_name_or_path "models/Llama-3.1-8B-Instruct" \
+#     --lora_adapter_path "output/rplan_30_8B_no_doors_r_32" \
+#     --feedback_iterations 1 \
+#     --dataset_name_or_path "datasets/rplan_converted_no_doors" \
 #     --output_dir "results/generations/rplan_25_70B/full_prompt" \
 #     --test_range "$TEST_RANGE" \

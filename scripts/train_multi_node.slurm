@@ -35,7 +35,7 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --quantization 4bit \
     --model_name models/Llama-3.1-8B-Instruct \
     --use_peft True \
-    --custom_dataset.data_path "datasets/rplan_converted_no_doors" \
+    --custom_dataset.data_path "hf_datasets/rplan_converted_no_doors" \
     --custom_dataset.file "src/train/floorplan_dataset.py" \
     --batch_size_training 8 \
     --num_epochs $EPOCHS \

@@ -33,7 +33,7 @@ def get_few_shot_examples(example):
     return f"{create_input(example)}\n   {create_output(example)}"
 
 if __name__ == "__main__":
-    dataset = load_from_disk("datasets/rplan_converted_no_doors")
+    dataset = load_from_disk("datasets/rplan_converted")
     print(dataset)
     train_examples = list((dataset["train"]))
     random_examples = random.sample(train_examples, 10)
