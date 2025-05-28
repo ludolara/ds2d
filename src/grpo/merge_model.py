@@ -2,9 +2,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 import torch
 
-base_model_path = "models/Llama-3.1-8B-Instruct"       
-adapter_path = "output/rplan_30_8B_no_doors_r_32"            
-merged_model_path = "models/ds2d-Llama-3.1-8B-Instruct"
+base_model_path = "models/Llama-3.3-70B-Instruct"       
+adapter_path = "output/rplan_8_70B_no_doors_r_128"            
+merged_model_path = "models/r128-Llama-3.3-70B-Instruct"
 
 base_model = AutoModelForCausalLM.from_pretrained(
     base_model_path,

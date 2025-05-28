@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=train-grpo
-#SBATCH --output=logs/train_grpo/job_output.log
-#SBATCH --error=logs/train_grpo/job_error.log
+#SBATCH --job-name=train-grpo-70B
+#SBATCH --output=logs/train_grpo_70B/job_output.log
+#SBATCH --error=logs/train_grpo_70B/job_error.log
 #SBATCH --nodes=7
 #SBATCH --mem=448G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=23:59:00
+#SBATCH --time=12:00:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -14,10 +14,11 @@ module load opencv
 module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
-export LOGLEVEL=DEBUG
+
+export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/Llama-4-Scout-17B-16E-Instruct"
+MODEL="models/r128-Llama-3.3-70B-Instruct"
 DATASET="hf_datasets/rplan_converted_no_doors"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
@@ -43,12 +44,12 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
-     --output "output/llama4-GRPO_${NUM_NODES}" \
+     --output "output/70B_8_r128_GRPO_${NUM_NODES}n" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
      --vllm_server_host $VLLM_NODE &
 
 # Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --max_model_len 100000 --override_generation_config {"attn_temperature_tuning": true} &
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning &
 
 wait

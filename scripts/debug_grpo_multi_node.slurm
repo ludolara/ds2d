@@ -1,4 +1,13 @@
 #!/bin/bash
+#SBATCH --job-name=train-grpo
+#SBATCH --output=logs/train_grpo/job_output.log
+#SBATCH --error=logs/train_grpo/job_error.log
+#SBATCH --nodes=3
+#SBATCH --mem=96G
+#SBATCH --cpus-per-gpu=3
+#SBATCH --gres=gpu:h100:4
+#SBATCH --time=12:00:00
+#SBATCH --account=aip-pal
 
 module load python/3.11
 module load opencv
@@ -9,7 +18,7 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/ds2d-Llama-3.1-8B-Instruct"
+MODEL="models/r128-Llama-3.1-8B-Instruct"
 DATASET="hf_datasets/rplan_converted_no_doors"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
@@ -35,7 +44,7 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
-     --output "output/8B_GRPO_${NUM_NODES}nodes" \
+     --output "output/8B_30_r128_GRPO_${NUM_NODES}n" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
      --vllm_server_host $VLLM_NODE &

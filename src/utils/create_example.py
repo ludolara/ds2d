@@ -1,5 +1,5 @@
 import json
-from src.utils.constants import SYSTEM_PROMPT, SYSTEM_PROMPT_LLAMA4
+from src.utils.constants import SYSTEM_PROMPT, SYSTEM_PROMPT_FEW_SHOT
 
 def create_input(sample, is_str=True):
     inp = {
@@ -49,7 +49,7 @@ def build_prompt(sample):
 def build_prompt_llama4(sample):
     prompt = (
         f"<|begin_of_text|><|start_id|>system<|end_id|>\n"
-        f"{SYSTEM_PROMPT_LLAMA4}<|eot_id|><|start_id|>user<|end_id|>\n"
+        f"{SYSTEM_PROMPT_FEW_SHOT}<|eot_id|><|start_id|>user<|end_id|>\n"
         f"{sample}<|eot_id|><|start_id|>assistant<|end_id|>\n"
     )
     return prompt

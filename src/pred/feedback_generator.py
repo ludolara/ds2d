@@ -2,10 +2,11 @@ from shapely.geometry import Polygon
 from src.utils.constants import OVERLAP_TOL
 from src.utils.json_check.verify import is_valid_json, is_valid_json_feedback
 from shapely.ops import unary_union
+# import traceback
 
 class FeedbackGenerator:
     @staticmethod
-    def analyze(output_floor_plan, input_prompt, tol=OVERLAP_TOL, area_tol=15):
+    def analyze(output_floor_plan, input_prompt, tol=OVERLAP_TOL, area_tol=5):
         rooms = output_floor_plan.get("rooms", [])
         polygons = {}
 
@@ -133,58 +134,64 @@ class FeedbackGenerator:
     
     @staticmethod
     def grpo_feedback(output_floor_plan, input_prompt, round_digits: int = 4):
-        polygons = {}
-        for idx, room in enumerate(output_floor_plan.get("rooms", [])):
-            pts = room.get("floor_polygon") or []
-            try:
-                coords = [(float(p["x"]), float(p["y"])) for p in pts]
-                poly = Polygon(coords)
-                if not poly.is_valid:
-                    poly = poly.buffer(0)
-                if poly.is_valid and poly.area:
-                    room_id = str(room.get("id", idx))
-                    key = room_id if room_id not in polygons else f"{room_id}_{idx}"
-                    polygons[key] = poly
-            except Exception:
-                continue
+        try:
+            polygons = {}
+            for idx, room in enumerate(output_floor_plan.get("rooms", [])):
+                pts = room.get("floor_polygon") or []
+                try:
+                    coords = [(float(p["x"]), float(p["y"])) for p in pts]
+                    poly = Polygon(coords)
+                    if not poly.is_valid:
+                        poly = poly.buffer(0)
+                    if poly.is_valid and poly.area:
+                        room_id = str(room.get("id", idx))
+                        key = room_id if room_id not in polygons else f"{room_id}_{idx}"
+                        polygons[key] = poly
+                except Exception:
+                    continue
 
-        # Compute total overlap area
-        total_overlap = 0.0
-        ids = list(polygons)
-        for i in range(len(ids)):
-            for j in range(i + 1, len(ids)):
-                inter = polygons[ids[i]].intersection(polygons[ids[j]])
-                total_overlap += inter.area
+            total_overlap = 0.0
+            ids = list(polygons)
+            for i in range(len(ids)):
+                for j in range(i + 1, len(ids)):
+                    inter = polygons[ids[i]].intersection(polygons[ids[j]])
+                    total_overlap += inter.area
 
-        total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
-        overlap_ratio = total_overlap / total_area
-        is_valid, feedback = is_valid_json_feedback(output_floor_plan)
-        # print(f"Feedback: {feedback}")
+            total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
+            overlap_ratio = total_overlap / total_area
+            overlap_match = (round(overlap_ratio, round_digits-1) != 0)
 
-        expected_room_count = input_prompt.get("room_count", 0)
-        expected_total_area = input_prompt.get("total_area", 0)
+            is_valid, _ = is_valid_json_feedback(output_floor_plan)
+            # print(f"Feedback: {feedback}")
 
-        if expected_room_count > 0:
-            actual_room_count = len(polygons)
-            room_count_ratio = actual_room_count / expected_room_count
-        else:
-            room_count_ratio = 0 
+            expected_room_count = input_prompt.get("room_count", 0)
+            expected_total_area = input_prompt.get("total_area", 0)
 
-        if expected_total_area > 0:
-            total_area_ratio = total_area / expected_total_area
-        else:
-            total_area_ratio = 0 
+            if expected_room_count > 0:
+                actual_room_count = len(polygons)
+                room_count_match = (actual_room_count == expected_room_count)
+            else:
+                room_count_match = False
+            
+            if expected_total_area > 0:
+                total_area_ratio = total_area / expected_total_area
+            else:
+                total_area_ratio = 0 
 
-        union_poly = unary_union(list(polygons.values()))
-        compactness = union_poly.area / union_poly.convex_hull.area
-        compactness_threshold = 0.8
-        scaled_compactness = min(compactness / compactness_threshold, 1.0)
+            union_poly = unary_union(list(polygons.values()))
+            compactness = union_poly.area / union_poly.convex_hull.area
+            compactness_threshold = 0.8
+            scaled_compactness = min(compactness / compactness_threshold, 1.0)
 
-        return {
-            "is_valid_json": is_valid,
-            "room_count": round(room_count_ratio, round_digits),
-            "total_area": round(total_area_ratio, round_digits),
-            "overlap": round(overlap_ratio, round_digits),
-            # "compactness": round(compactness, round_digits)
-            "compactness": round(scaled_compactness, round_digits)
-        }
+            return {
+                "is_valid_json": is_valid,
+                "room_count": room_count_match,
+                "total_area": round(total_area_ratio, round_digits),
+                "is_overlap": overlap_match,
+                "overlap": overlap_ratio,
+                "compactness": round(scaled_compactness, round_digits)
+            }
+        except Exception as e:
+            print(f"Error in grpo_feedback: {e}")
+            # print(traceback.format_exc())
+            return { "is_valid_json": False }
