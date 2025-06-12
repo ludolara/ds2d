@@ -16,7 +16,7 @@ import networkx as nx
 @dataclass
 class RPLANConverter:
     """
-    Convert raw RPLAN JSON into a Hugging Face DatasetDict.
+    Convert raw RPLAN housegan JSON into a Hugging Face DatasetDict.
     """
     round_value: int = 1
     original_map = RPLAN_ROOM_CLASS
@@ -40,13 +40,7 @@ class RPLANConverter:
             raise ValueError("No polygon could be formed from segments.")
         if len(polys) > 1:
             raise ValueError(f"Multiple polygons detected: {len(polys)}")
-        return polys[0] 
-
-    # def _shuffle_spaces(self, spaces: List[OrderedDict], seed: int = 42) -> List[Dict[str, Any]]:
-    #     random.seed(seed)
-    #     random_spaces = list(spaces)
-    #     random.shuffle(random_spaces)
-    #     return random_spaces
+        return polys[0]
 
     def _convert_entry(self, data: Dict[str, Any]) -> Dict[str, Any]:
         counts = Counter(data["room_type"])
@@ -95,30 +89,30 @@ class RPLANConverter:
                         for x, y in poly.exterior.coords[:-1]
                     ]
                 })
-                total_area += area
+                if room["room_type"] not in ["interior_door", "front_door"]:
+                    total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
                 return None
 
         # build index-based adjacency with RPLANGraph
-        fp_graph = RPLANGraph({
+        fp_graph = RPLANGraph.from_housegan({
             "room_type": data["room_type"],
             "ed_rm": data["ed_rm"]
         })
-        bubble_diagram = fp_graph.bubble_diagram
-        # remove entries with rooms with empty arraay
-        if any(not neigh for neigh in bubble_diagram.values()) or not nx.is_connected(nx.from_dict_of_lists(bubble_diagram)):
+        input_graph = fp_graph.to_labeled_adjacency()
+        # remove entries with rooms with empty array
+        if any(not neigh for neigh in input_graph.values()) or not nx.is_connected(nx.from_dict_of_lists(input_graph)):
             return None
         
-        # random_spaces = self._shuffle_spaces(spaces)
-        # spaces = [room for room in spaces if room["room_type"] not in ["interior_door", "front_door"]]
+        only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door", "front_door"]]
 
         return {
             "rplan_id": data.get("rplan_id"),
-            "room_count": len(spaces),
+            "room_count": len(only_rooms),
             "total_area": round(total_area, self.round_value),
-            "room_types": [r["room_type"] for r in spaces],
-            "bubble_diagram": json.dumps(bubble_diagram),
+            # "room_types": [r["room_type"] for r in only_rooms],
+            "input_graph": json.dumps(input_graph),
             "rooms": spaces
         }
 
@@ -153,6 +147,6 @@ class RPLANConverter:
 if __name__ == "__main__":
     converter = RPLANConverter()
     ds = converter("datasets/rplan_json")
-    ds.save_to_disk("datasets/rplan_converted")
+    ds.save_to_disk("datasets/rplan")
     print(ds)
     print("Done. Sample:", ds["train"][0])

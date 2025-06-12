@@ -1,8 +1,10 @@
 from shapely.geometry import Polygon
+from src.dataset_convert.rplan_graph import RPLANGraph
 from src.utils.constants import OVERLAP_TOL
 from src.utils.json_check.verify import is_valid_json, is_valid_json_feedback
+import json
 from shapely.ops import unary_union
-# import traceback
+import traceback
 
 class FeedbackGenerator:
     @staticmethod
@@ -137,16 +139,18 @@ class FeedbackGenerator:
         try:
             polygons = {}
             for idx, room in enumerate(output_floor_plan.get("rooms", [])):
-                pts = room.get("floor_polygon") or []
+                pts = room.get("floor_polygon", [])
+                room_type = room.get("room_type", "unknown")
                 try:
-                    coords = [(float(p["x"]), float(p["y"])) for p in pts]
-                    poly = Polygon(coords)
-                    if not poly.is_valid:
-                        poly = poly.buffer(0)
-                    if poly.is_valid and poly.area:
-                        room_id = str(room.get("id", idx))
-                        key = room_id if room_id not in polygons else f"{room_id}_{idx}"
-                        polygons[key] = poly
+                    if room_type not in ["interior_door", "front_door"]:
+                        coords = [(float(p["x"]), float(p["y"])) for p in pts]
+                        poly = Polygon(coords)
+                        if not poly.is_valid:
+                            poly = poly.buffer(0)
+                        if poly.is_valid and poly.area:
+                            room_id = str(room.get("id", idx))
+                            key = room_id if room_id not in polygons else f"{room_id}_{idx}"
+                            polygons[key] = poly
                 except Exception:
                     continue
 
@@ -161,8 +165,8 @@ class FeedbackGenerator:
             overlap_ratio = total_overlap / total_area
             overlap_match = (round(overlap_ratio, round_digits-1) != 0)
 
-            is_valid, _ = is_valid_json_feedback(output_floor_plan)
-            # print(f"Feedback: {feedback}")
+            is_valid, feedback = is_valid_json_feedback(output_floor_plan)
+            print(f"Feedback: {feedback}")
 
             expected_room_count = input_prompt.get("room_count", 0)
             expected_total_area = input_prompt.get("total_area", 0)
@@ -174,24 +178,31 @@ class FeedbackGenerator:
                 room_count_match = False
             
             if expected_total_area > 0:
+                total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
                 total_area_ratio = total_area / expected_total_area
             else:
                 total_area_ratio = 0 
 
-            union_poly = unary_union(list(polygons.values()))
-            compactness = union_poly.area / union_poly.convex_hull.area
-            compactness_threshold = 0.8
-            scaled_compactness = min(compactness / compactness_threshold, 1.0)
+            # union_poly = unary_union(list(polygons.values()))
+            # compactness = union_poly.area / union_poly.convex_hull.area
+            # compactness_threshold = 0.8
+            # scaled_compactness = min(compactness / compactness_threshold, 1.0)
+
+            input_graph_json = json.loads(input_prompt.get("input_graph", {}))
+            input_graph = RPLANGraph.from_labeled_adjacency(input_graph_json)
+            output_graph = RPLANGraph.from_ds2d(output_floor_plan)
+            compatibility_score = output_graph.compatibility_score_scaled(input_graph)
 
             return {
                 "is_valid_json": is_valid,
                 "room_count": room_count_match,
                 "total_area": round(total_area_ratio, round_digits),
                 "is_overlap": overlap_match,
-                "overlap": overlap_ratio,
-                "compactness": round(scaled_compactness, round_digits)
+                "compatibility": round(compatibility_score, round_digits)
+                # "overlap": overlap_ratio,
+                # "compactness": round(scaled_compactness, round_digits)
             }
         except Exception as e:
             print(f"Error in grpo_feedback: {e}")
-            # print(traceback.format_exc())
+            print(traceback.format_exc())
             return { "is_valid_json": False }

@@ -5,7 +5,7 @@ def create_input(sample, is_str=True):
     inp = {
         "room_count": sample.get("room_count"),
         "total_area": sample.get("total_area"),
-        "room_types": sample.get("room_types"),
+        # "room_types": sample.get("room_types"),
         "rooms": [
             {
                 "id": room.get("id"),
@@ -16,7 +16,7 @@ def create_input(sample, is_str=True):
             }
             for room in sample.get("rooms", [])
         ],
-        "bubble_diagram": json.loads(sample.get("bubble_diagram", [])),
+        "input_graph": json.loads(sample.get("input_graph", [])),
     }
     if is_str:
         return str({"input": inp})

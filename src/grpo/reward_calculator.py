@@ -12,12 +12,13 @@ class RewardCalculator:
             self._cache["stats"] = [
                 FeedbackGenerator.grpo_feedback(
                     extract_output_json(comp),
-                    {"room_count": rc, "total_area": ta}
+                    {"room_count": rc, "total_area": ta, "input_graph": ig}
                 )
-                for comp, rc, ta in zip(
+                for comp, rc, ta, ig in zip(
                     completions,
                     kwargs.get("room_count", []),
                     kwargs.get("total_area", []),
+                    kwargs.get("input_graph", {}),
                 )
             ]
             self._cache["key"] = key
@@ -79,12 +80,23 @@ class RewardCalculator:
     #     ]
     #     return rewards
 
-    def compactness(self, completions: List[Any], **kwargs: Any) -> List[float]:
+    # def compactness(self, completions: List[Any], **kwargs: Any) -> List[float]:
+    #     stats = self._compute_stats(completions, **kwargs)
+    #     rewards = [
+    #         self._valid_or_zero(
+    #             s,
+    #             lambda st: self._linear_reward(st.get("compactness", 0.0))
+    #         )
+    #         for s in stats
+    #     ]
+    #     return rewards
+
+    def compatibility(self, completions: List[Any], **kwargs: Any) -> List[float]:
         stats = self._compute_stats(completions, **kwargs)
         rewards = [
             self._valid_or_zero(
                 s,
-                lambda st: self._linear_reward(st.get("compactness", 0.0))
+                lambda st: st.get("compatibility", 0.0)
             )
             for s in stats
         ]
@@ -97,5 +109,6 @@ class RewardCalculator:
             self.total_area,
             self.is_overlap,
             # self.overlap,
-            self.compactness,
+            # self.compactness,
+            self.compatibility
         ]

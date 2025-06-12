@@ -34,6 +34,8 @@ def main():
         gradient_checkpointing=True,
         logging_steps=50,
         save_steps=100,
+        # logging_steps=25,
+        # save_steps=50,
         save_total_limit=3,
         save_only_model=True, #remove this line to save the entire trainer
         report_to="wandb",

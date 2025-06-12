@@ -42,7 +42,7 @@ class FloorplanGenerator:
             tensor_parallel_size=4,
             device=self.device,
             enable_lora=self.enable_lora,
-            max_lora_rank=128
+            max_lora_rank=256
         )
         if self.enable_lora:
             self.lora_request = LoRARequest(

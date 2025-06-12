@@ -6,7 +6,7 @@
 #SBATCH --mem=448G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=12:00:00
+#SBATCH --time=23:59:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -18,8 +18,8 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/r128-Llama-3.3-70B-Instruct"
-DATASET="hf_datasets/rplan_converted_no_doors"
+MODEL="models/r256-Llama-3.3-70B-Instruct"
+DATASET="hf_datasets/rplan"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
 NUM_TRAIN_NODES=$((NUM_NODES - 1))
@@ -44,12 +44,12 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
-     --output "output/70B_8_r128_GRPO_${NUM_NODES}n" \
+     --output "output/70B_r256_GRPO_${NUM_NODES}n" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
      --vllm_server_host $VLLM_NODE &
 
 # Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning &
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
 
 wait
