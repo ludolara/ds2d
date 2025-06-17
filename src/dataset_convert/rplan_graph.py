@@ -28,7 +28,7 @@ CMAP = {
 @dataclass
 class RPLANGraph:
     """
-    Represent a floorplan as a graph, excluding doors from nodes and edges.
+    Represent a floorplan as a graph.
     """
     floorplan: Dict[str, Any]
     room_class: Dict[int,str] = field(default_factory=lambda: ROOM_CLASS.copy())
