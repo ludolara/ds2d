@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import networkx as nx
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from typing import Any, Dict, List, Set
 from collections import Counter, defaultdict
 from shapely.geometry import Polygon
@@ -64,7 +64,7 @@ class RPLANGraph:
         return inst
 
     @classmethod
-    def from_ds2d(cls, data: Dict[str,Any], gap_threshold: float = 0.2) -> "RPLANGraph":
+    def from_ds2d(cls, data: Dict[str,Any], gap_threshold: float = 0.2, boundary_tolerance: float = 0.3, overlap_threshold: float = 0.3) -> "RPLANGraph":
         inst = cls({})
         room_polys = {}
         door_polys = {}
@@ -80,11 +80,50 @@ class RPLANGraph:
         for idx in room_polys:
             rt_int = name_to_int.get(data["rooms"][idx]["room_type"], name_to_int["unknown"])
             G.add_node(idx, room_type=rt_int)
-        for poly in door_polys.values():
-            buf = poly.buffer(gap_threshold)
+        
+        for door_idx, door_poly in door_polys.items():
+            door_room_type = data["rooms"][door_idx]["room_type"]
+            if door_room_type == "front_door":
+                continue
+                
+            buf = door_poly.buffer(gap_threshold)
             touching = [i for i,p in room_polys.items() if buf.intersects(p)]
+            
             for a,b in combinations(touching, 2):
+                # Validation 1: Check if the door is close to the gap between the two rooms
+                room_a_poly = room_polys[a]
+                room_b_poly = room_polys[b]
+                
+                # Check if door is close to both room boundaries (more tolerant approach)
+                door_centroid = door_poly.centroid
+                dist_to_a = room_a_poly.boundary.distance(door_centroid)
+                dist_to_b = room_b_poly.boundary.distance(door_centroid)
+                
+                # Door should be close to both room boundaries
+                if dist_to_a > boundary_tolerance or dist_to_b > boundary_tolerance:
+                    continue  # Skip if door is too far from either room boundary
+                
+                # Validation 2: Check if door significantly overlaps with room interiors
+                door_area = door_poly.area
+                
+                valid_connection = True
+                for room_poly in room_polys.values():
+                    if door_poly.overlaps(room_poly):
+                        overlap_area = door_poly.intersection(room_poly).area
+                        overlap_ratio = overlap_area / door_area if door_area > 0 else 0
+                        if overlap_ratio > overlap_threshold:
+                            valid_connection = False
+                            break
+                
+                if not valid_connection:
+                    continue  # Skip this connection if door overlaps significantly with any room
+                
+                # Validation 3: Check if one room is contained within the other (invalid connection)
+                if room_a_poly.contains(room_b_poly) or room_b_poly.contains(room_a_poly):
+                    continue  # Skip if one room is completely inside the other
+                
                 G.add_edge(a, b)
+        
         inst.graph = G
         return inst
 
@@ -177,14 +216,14 @@ class RPLANGraph:
             return 1.0
         return 1.0 - mismatches / total
         
-    def draw(self, title: str = "Input Graph", seed: int = 42) -> None:
-        pos = nx.spring_layout(self.graph, seed=seed)
-        nx.draw_networkx_nodes(
-            self.graph,
-            pos,
-            node_color=[self.cmap[self.graph.nodes[n]["room_type"]] for n in self.graph.nodes()],
-            node_size=300,
-        )
-        nx.draw_networkx_edges(self.graph, pos, width=2)
-        plt.title(title)
-        plt.axis("off")
+    # def draw(self, title: str = "Input Graph", seed: int = 42) -> None:
+    #     pos = nx.spring_layout(self.graph, seed=seed)
+    #     nx.draw_networkx_nodes(
+    #         self.graph,
+    #         pos,
+    #         node_color=[self.cmap[self.graph.nodes[n]["room_type"]] for n in self.graph.nodes()],
+    #         node_size=300,
+    #     )
+    #     nx.draw_networkx_edges(self.graph, pos, width=2)
+    #     plt.title(title)
+    #     plt.axis("off")

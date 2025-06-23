@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from pathlib import Path
 from datasets import DatasetDict, Dataset
 from sklearn.model_selection import train_test_split
+import random
 from shapely.geometry import LineString
 from shapely.ops import polygonize
 from shapely.affinity import scale
@@ -22,6 +23,7 @@ class RPLANConverter:
     original_map = RPLAN_ROOM_CLASS
     room_map: Dict[int, str] = field(init=False)
     pixel_to_meter: float = field(init=False)
+    room_number: int = 8
 
     def __post_init__(self):
         # reverse original_map to map code → name
@@ -107,13 +109,24 @@ class RPLANConverter:
         
         only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door", "front_door"]]
 
+        # create input
+        input_data = {
+            "input": {
+                "room_count": len(only_rooms),
+                "total_area": round(total_area, self.round_value),
+                "rooms": only_rooms,
+                "input_graph": input_graph
+            }
+        }
+
         return {
             "rplan_id": data.get("rplan_id"),
             "room_count": len(only_rooms),
             "total_area": round(total_area, self.round_value),
             # "room_types": [r["room_type"] for r in only_rooms],
             "input_graph": json.dumps(input_graph),
-            "rooms": spaces
+            "rooms": spaces,
+            "input": str(input_data)
         }
 
     def create_dataset(self, raw: List[Dict[str, Any]]) -> DatasetDict:
@@ -122,8 +135,15 @@ class RPLANConverter:
             if (out := self._convert_entry(item)) is not None
         ]
 
-        train, temp = train_test_split(converted, test_size=0.2, shuffle=False)
-        test, val = train_test_split(temp, test_size=0.5, shuffle=False)
+        if self.room_number == 0:
+            train, test_val = train_test_split(converted, test_size=0.2, shuffle=True)
+            test, val = train_test_split(test_val, test_size=0.5, shuffle=True)
+        else:
+            target_room_plans = [item for item in converted if item["room_count"] == self.room_number]
+            other_plans = [item for item in converted if item["room_count"] != self.room_number]
+            test, val = train_test_split(target_room_plans, test_size=0.5, shuffle=True)
+            random.shuffle(other_plans)
+            train = other_plans
 
         return DatasetDict({
             "train": Dataset.from_list(train),
@@ -145,8 +165,9 @@ class RPLANConverter:
         return self.create_dataset(raw)
 
 if __name__ == "__main__":
-    converter = RPLANConverter()
+    room_number = 8
+    converter = RPLANConverter(room_number=room_number)
     ds = converter("datasets/rplan_json")
-    ds.save_to_disk("datasets/rplan")
+    ds.save_to_disk(f"datasets/rplan_{room_number}")
     print(ds)
     print("Done. Sample:", ds["train"][0])
