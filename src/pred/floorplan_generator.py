@@ -2,6 +2,7 @@ import os
 import json
 from tqdm import tqdm
 from dotenv import load_dotenv
+from src.dataset_convert.rplan_graph import RPLANGraph
 from src.utils import create_input
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
@@ -42,7 +43,7 @@ class FloorplanGenerator:
             tensor_parallel_size=4,
             device=self.device,
             enable_lora=self.enable_lora,
-            max_lora_rank=256
+            max_lora_rank=512
         )
         if self.enable_lora:
             self.lora_request = LoRARequest(
@@ -55,8 +56,8 @@ class FloorplanGenerator:
             max_tokens=self.max_new_tokens,
             temperature=0.7,
             top_p=0.9,
-            # n=30,
-            # best_of=30,
+            n=10,
+            best_of=10,
         )
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]
@@ -106,14 +107,34 @@ class FloorplanGenerator:
 
         return re_prompt
     
-    def _select_least_overlap(self, candidates, input_prompt):
-        return min(
-            candidates,
-            key=lambda cand: FeedbackGenerator.analyze(
-                extract_output_json(cand.text),
-                input_prompt
-            )['total_overlap_area']
-        )
+    # def _select_least_overlap(self, candidates, input_prompt):
+    #     return min(
+    #         candidates,
+    #         key=lambda cand: FeedbackGenerator.analyze(
+    #             extract_output_json(cand.text),
+    #             input_prompt
+    #         )['total_overlap_area']
+    #     ) 
+    
+    def _select_least_two(self, candidates, input_prompt):
+        """
+        Return the candidate minimizing first total_overlap_area,
+        then compatibility_score.
+        """
+        def _key(cand):
+            output = extract_output_json(cand.text)
+            analysis = FeedbackGenerator.analyze(output, input_prompt)
+            overlap = analysis['total_overlap_area']
+
+            input_graph = RPLANGraph.from_ds2d(output)
+            expected_graph = RPLANGraph.from_labeled_adjacency(
+                input_prompt["input_graph"]
+            )
+            compatibility_score = input_graph.compatibility_score(expected_graph)
+
+            return (overlap, compatibility_score)
+
+        return min(candidates, key=_key)
 
     def generate_floorplans_with_feedback(self, feedback_iterations=3):
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans with feedback"):
@@ -137,7 +158,7 @@ class FloorplanGenerator:
                 )
 
                 for pos, idx in enumerate(unresolved_indices):
-                    output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
+                    output_json = self._select_least_two(outputs[pos].outputs, create_input(samples[idx], is_str=False))
                     output_json = extract_output_json(output_json.text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))

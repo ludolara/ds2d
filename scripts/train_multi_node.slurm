@@ -16,8 +16,8 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-30} 
-OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r512_a1024_all/"
+EPOCHS=${1:-8} 
+OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r256_a512_all/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -53,7 +53,7 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --quantization 4bit \
     --model_name models/Llama-3.3-70B-Instruct \
     --use_peft True \
-    --custom_dataset.data_path "datasets/rplan" \
+    --custom_dataset.data_path "datasets/rplan_8" \
     --custom_dataset.file "src/train/floorplan_dataset.py" \
     --batch_size_training 2 \
     --num_epochs $EPOCHS \
