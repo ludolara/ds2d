@@ -166,7 +166,6 @@ class FeedbackGenerator:
             overlap_match = (round(overlap_ratio, round_digits-1) != 0)
 
             is_valid, feedback = is_valid_json_feedback(output_floor_plan)
-            print(f"Feedback: {feedback}")
 
             expected_room_count = input_prompt.get("room_count", 0)
             expected_total_area = input_prompt.get("total_area", 0)
@@ -181,12 +180,7 @@ class FeedbackGenerator:
                 total_area = sum(poly.area for poly in polygons.values() if poly.is_valid)
                 total_area_ratio = total_area / expected_total_area
             else:
-                total_area_ratio = 0 
-
-            # union_poly = unary_union(list(polygons.values()))
-            # compactness = union_poly.area / union_poly.convex_hull.area
-            # compactness_threshold = 0.8
-            # scaled_compactness = min(compactness / compactness_threshold, 1.0)
+                total_area_ratio = 0
 
             input_graph_json = json.loads(input_prompt.get("input_graph", {}))
             input_graph = RPLANGraph.from_labeled_adjacency(input_graph_json)
@@ -199,10 +193,8 @@ class FeedbackGenerator:
                 "total_area": round(total_area_ratio, round_digits),
                 "is_overlap": overlap_match,
                 "compatibility": round(compatibility_score, round_digits)
-                # "overlap": overlap_ratio,
-                # "compactness": round(scaled_compactness, round_digits)
             }
         except Exception as e:
-            print(f"Error in grpo_feedback: {e}")
-            print(traceback.format_exc())
+            # print(f"Error in grpo_feedback: {e}")
+            # print(traceback.format_exc())
             return { "is_valid_json": False }

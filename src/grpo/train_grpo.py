@@ -5,6 +5,8 @@ from src.utils import build_prompt
 from trl import GRPOConfig, GRPOTrainer
 from dotenv import load_dotenv
 import wandb
+import os
+import glob
 
 load_dotenv()
 wandb.init(project="floorplans", mode="offline")
@@ -15,33 +17,66 @@ def main():
     parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
     parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
+    parser.add_argument("--num_eval_examples", type=int, default=2, help="Number of examples to use for evaluation")
+    parser.add_argument("--no_eval", action="store_true", help="Disable evaluation during training")
     args = parser.parse_args()
 
+    dataset = load_from_disk(args.dataset)
+    
     train_dataset = (
-        load_from_disk(args.dataset)["train"]
+        dataset["train"]
         .rename_column("input", "prompt")
         .map(lambda x: {"prompt": build_prompt(x["prompt"])})
     )
+    
+    eval_dataset = None
+    if "validation" in dataset:
+        eval_dataset = (
+            dataset["validation"]
+            .select(range(min(args.num_eval_examples, len(dataset["validation"])))) 
+            .rename_column("input", "prompt")
+            .map(lambda x: {"prompt": build_prompt(x["prompt"])})
+        )
+    elif "test" in dataset:
+        eval_dataset = (
+            dataset["test"]
+            .select(range(min(args.num_eval_examples, len(dataset["test"])))) 
+            .rename_column("input", "prompt")
+            .map(lambda x: {"prompt": build_prompt(x["prompt"])})
+        )
+    
+    do_eval = not args.no_eval  # Enable eval by default, disable with --no_eval
 
     training_args = GRPOConfig(
         output_dir=args.output,
         per_device_train_batch_size=2,
-        # num_generations=16,
+
+        num_generations=16,
         # gradient_accumulation_steps=4,
+        
         max_prompt_length=4096,
         max_completion_length=4096,
         bf16=True,
         gradient_checkpointing=True,
-        logging_steps=50,
-        save_steps=100,
-        # logging_steps=25,
-        # save_steps=50,
-        save_total_limit=3,
-        save_only_model=True, #remove this line to save the entire trainer
+        # logging_steps=50,
+        # save_steps=100,
+        logging_steps=1,
+        save_steps=4,
+        save_total_limit=1,
+        # save_only_model=True, #remove this line to save the entire trainer
         report_to="wandb",
         use_vllm=True,
         vllm_server_host=args.vllm_server_host,
+        resume_from_checkpoint=True, # resume from last checkpoint
+        # Evaluation configuration
+        do_eval=do_eval,
+        eval_strategy="steps" if do_eval else "no",
+        eval_steps=4 if do_eval else None, 
+        per_device_eval_batch_size=2,
+        log_level="info",
     )
+
+
 
     reward_calculator = RewardCalculator()
     reward_funcs = reward_calculator.make_reward_funcs()
@@ -51,8 +86,23 @@ def main():
         args=training_args, 
         reward_funcs=reward_funcs, 
         train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
     )
-    trainer.train()
+    
+    checkpoint_dir = None
+    if os.path.exists(args.output):
+        checkpoint_pattern = os.path.join(args.output, "checkpoint-*")
+        checkpoints = glob.glob(checkpoint_pattern)
+        if checkpoints:
+            latest_checkpoint = max(checkpoints, key=lambda x: int(x.split('-')[-1]))
+            checkpoint_dir = latest_checkpoint
+            print(f"✓ Resuming from checkpoint: {checkpoint_dir}")
+        else:
+            print("No checkpoints found, starting fresh training")
+    else:
+        print("Output directory doesn't exist, starting fresh training")
+    
+    trainer.train(resume_from_checkpoint=checkpoint_dir)
     trainer.save_model()
 
 if __name__=="__main__":
