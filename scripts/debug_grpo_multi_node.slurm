@@ -45,6 +45,7 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
      --output "output/8B_30_r256_GRPO_${NUM_NODES}n" \
+     --use_lora \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
      --vllm_server_host $VLLM_NODE &
