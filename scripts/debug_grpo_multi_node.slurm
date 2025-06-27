@@ -19,7 +19,7 @@ export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
 MODEL="models/r256-Llama-3.1-8B-Instruct"
-DATASET="hf_datasets/rplan"
+DATASET="datasets/rplan_8"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
 NUM_TRAIN_NODES=$((NUM_NODES - 1))

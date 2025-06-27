@@ -1,11 +1,10 @@
 import json
-from src.utils.constants import SYSTEM_PROMPT, SYSTEM_PROMPT_FEW_SHOT
+from src.utils.constants import SYSTEM_PROMPT
 
 def create_input(sample, is_str=True):
     inp = {
         "room_count": sample.get("room_count"),
         "total_area": sample.get("total_area"),
-        # "room_types": sample.get("room_types"),
         "rooms": [
             {
                 "id": room.get("id"),
@@ -43,13 +42,5 @@ def build_prompt(sample):
         f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
         f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
         f"{sample}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-    )
-    return prompt
-
-def build_prompt_llama4(sample):
-    prompt = (
-        f"<|begin_of_text|><|start_id|>system<|end_id|>\n"
-        f"{SYSTEM_PROMPT_FEW_SHOT}<|eot_id|><|start_id|>user<|end_id|>\n"
-        f"{sample}<|eot_id|><|start_id|>assistant<|end_id|>\n"
     )
     return prompt

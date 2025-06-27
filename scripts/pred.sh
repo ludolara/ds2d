@@ -6,11 +6,10 @@
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=2:59:00
+#SBATCH --time=0:59:00
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
-export VLLM_USE_V1=0
 
 module load cuda/12
 module load python/3.11
@@ -20,18 +19,19 @@ source $SCRATCH/env/vllm/bin/activate
 TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
-    --batch_size 32 \
-    --model_name_or_path "output/results_70B_r256_GRPO_7n/checkpoint-1100" \
+    --batch_size 64 \
+    --model_name_or_path "output/70B_r256_GRPO_9n/checkpoint-400" \
     --feedback_iterations 1 \
-    --dataset_name_or_path "hf_datasets/rplan" \
-    --output_dir "results_70B_r256_GRPO_7n_cp1100_sampling/generations/rplan_7_70B/full_prompt" \
+    --dataset_name_or_path "datasets/rplan_8" \
+    --output_dir "results_70B_r256_GRPO_sampling/generations/rplan_8_70B/full_prompt" \
     --test_range "$TEST_RANGE" \
+    --use_sampling
 
 # python src/pred/run_generation.py \
-#     --batch_size 32 \
+#     --batch_size 64 \
 #     --model_name_or_path "models/Llama-3.3-70B-Instruct" \
-#     --lora_adapter_path "output/results_70B" \
+#     --lora_adapter_path "output/rplan_8_70B_r256_a512_all" \
 #     --feedback_iterations 1 \
-#     --dataset_name_or_path "hf_datasets/rplan" \
-#     --output_dir "results_70B_r256_GRPO_7n_cp1100_sampling/generations/rplan_7_70B/full_prompt" \
+#     --dataset_name_or_path "datasets/rplan_8" \
+#     --output_dir "results_70B_r256_a512/generations/rplan_8_70B/full_prompt" \
 #     --test_range "$TEST_RANGE" \

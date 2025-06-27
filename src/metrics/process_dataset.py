@@ -42,7 +42,13 @@ class Floorplan():
     
     def get_rooms(self):
         try:
-            return self.floorplan["rooms"]
+            all_rooms = self.floorplan["rooms"]
+            filtered_rooms = []
+            for room in all_rooms:
+                room_type = room.get("room_type", "").lower()
+                if room_type not in ("front_door", "interior_door"):
+                    filtered_rooms.append(room)
+            return filtered_rooms
         except KeyError:
             return []
     

@@ -2,7 +2,7 @@
 #SBATCH --job-name=train-grpo-70B
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
-#SBATCH --nodes=7
+#SBATCH --nodes=9
 #SBATCH --mem=448G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
@@ -18,8 +18,8 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/r256-Llama-3.3-70B-Instruct"
-DATASET="hf_datasets/rplan"
+MODEL="models/r256_a512-Llama-3.3-70B-Instruct"
+DATASET="datasets/rplan_8"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
 NUM_TRAIN_NODES=$((NUM_NODES - 1))
@@ -53,3 +53,4 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
 srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
 
 wait
+

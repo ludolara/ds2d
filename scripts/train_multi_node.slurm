@@ -17,7 +17,8 @@ module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${1:-8} 
-OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r256_a512_all/"
+# OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r256_a512_all/"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan_${EPOCHS}_70B_r256_a512_all/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)

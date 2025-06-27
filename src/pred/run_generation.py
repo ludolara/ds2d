@@ -1,4 +1,5 @@
 import argparse
+import os
 from src.pred.floorplan_generator import FloorplanGenerator
 from src.pred.floorplan_generator_openai import FloorplanGenerator as FloorplanGeneratorOpenAI
 
@@ -14,10 +15,17 @@ def parse_arguments():
     parser.add_argument("--feedback_iterations", type=int, default=5)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output_dir", type=str, default="results_feedback/generations/rplan_3_70B/full_prompt", help="Directory to store the generated outputs")
+    parser.add_argument("--use_sampling", action="store_true", help="Whether to use sampling mode")
     return parser.parse_args()
 
 def main():
     args = parse_arguments()
+    
+    use_sampling = args.use_sampling
+    if use_sampling:
+        os.environ["VLLM_USE_V1"] = "0"
+    else:
+        os.environ["VLLM_USE_V1"] = "1"
 
     if args.model_name_or_path == "gpt-4o":
         generator = FloorplanGeneratorOpenAI(
@@ -40,7 +48,8 @@ def main():
             max_new_tokens=args.max_new_tokens,
             batch_size=args.batch_size,
             device=args.device,
-            output_dir=args.output_dir
+            output_dir=args.output_dir,
+            use_sampling=use_sampling
         )
     generator.generate_floorplans_with_feedback(feedback_iterations=args.feedback_iterations)
 

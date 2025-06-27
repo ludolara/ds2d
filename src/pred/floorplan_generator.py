@@ -25,7 +25,8 @@ class FloorplanGenerator:
         max_new_tokens=4096,
         batch_size=32,
         device="cuda",
-        output_dir="outputs"
+        output_dir="outputs",
+        use_sampling=True
     ):
         self.model_name_or_path = model_name_or_path
         self.enable_lora = lora_adapter_path
@@ -43,7 +44,7 @@ class FloorplanGenerator:
             tensor_parallel_size=4,
             device=self.device,
             enable_lora=self.enable_lora,
-            max_lora_rank=512
+            max_lora_rank=256
         )
         if self.enable_lora:
             self.lora_request = LoRARequest(
@@ -52,13 +53,23 @@ class FloorplanGenerator:
         else:
             self.lora_request = None
 
-        self.sampling_params = SamplingParams(
-            max_tokens=self.max_new_tokens,
-            temperature=0.7,
-            top_p=0.9,
-            n=10,
-            best_of=10,
-        )
+        if use_sampling:
+            self.sampling_params = SamplingParams(
+                max_tokens=self.max_new_tokens,
+                temperature=0.7,
+                top_p=0.9,
+                n=10,
+                best_of=10
+            )
+        else:
+            self.sampling_params = SamplingParams(
+                max_tokens=self.max_new_tokens,
+                temperature=0.7,
+                top_p=0.9
+            )
+        
+        # Store use_sampling for later use
+        self.use_sampling = use_sampling
 
         self.dataset = load_from_disk(self.dataset_name_or_path)[self.test_split]
         if test_range:
@@ -107,14 +118,14 @@ class FloorplanGenerator:
 
         return re_prompt
     
-    # def _select_least_overlap(self, candidates, input_prompt):
-    #     return min(
-    #         candidates,
-    #         key=lambda cand: FeedbackGenerator.analyze(
-    #             extract_output_json(cand.text),
-    #             input_prompt
-    #         )['total_overlap_area']
-    #     ) 
+    def _select_least_overlap(self, candidates, input_prompt):
+        return min(
+            candidates,
+            key=lambda cand: FeedbackGenerator.analyze(
+                extract_output_json(cand.text),
+                input_prompt
+            )['total_overlap_area']
+        ) 
     
     def _select_least_two(self, candidates, input_prompt):
         """
@@ -158,21 +169,26 @@ class FloorplanGenerator:
                 )
 
                 for pos, idx in enumerate(unresolved_indices):
-                    output_json = self._select_least_two(outputs[pos].outputs, create_input(samples[idx], is_str=False))
-                    output_json = extract_output_json(output_json.text)
+                    if self.sampling_params is not None:
+                        # output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
+                        output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
+                        output_json = extract_output_json(output_json.text)
+                    else:
+                        generated_text = outputs[pos].outputs[0]
+                        output_json = extract_output_json(generated_text.text)
 
                     sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
-                    sample_dir_feedback = os.path.join(sample_dir, "feedback")
+                    # sample_dir_feedback = os.path.join(sample_dir, "feedback")
                     os.makedirs(sample_dir, exist_ok=True)
-                    os.makedirs(sample_dir_feedback, exist_ok=True)
+                    # os.makedirs(sample_dir_feedback, exist_ok=True)
 
                     input_prompt = create_input(samples[idx], is_str=False)
                     with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
                         json.dump(input_prompt, f, indent=4)
                     with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:
                         json.dump(output_json, f, indent=4)
-                    with open(os.path.join(sample_dir_feedback, f"iteration_{iteration}.json"), "w", encoding="utf-8") as f:
-                        json.dump(output_json, f, indent=4)
+                    # with open(os.path.join(sample_dir_feedback, f"iteration_{iteration}.json"), "w", encoding="utf-8") as f:
+                    #     json.dump(output_json, f, indent=4)
 
                     overlap_metrics = FeedbackGenerator.analyze(output_json, input_prompt)
 
@@ -202,15 +218,15 @@ class FloorplanGenerator:
                         )
                         current_prompts[idx] = new_prompt
 
-                        with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
-                            f.writelines(new_prompt)
-                            f.writelines("=" * 20)
-                            f.write("\n")
+                    #     with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
+                    #         f.writelines(new_prompt)
+                    #         f.writelines("=" * 20)
+                    #         f.write("\n")
 
-                    with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
-                        filtered_history = [
-                            {key: value for key, value in entry.items() if key != "output"}
-                            for entry in histories[idx]
-                        ]
-                        json.dump(filtered_history, f, indent=4)
+                    # with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
+                    #     filtered_history = [
+                    #         {key: value for key, value in entry.items() if key != "output"}
+                    #         for entry in histories[idx]
+                    #     ]
+                    #     json.dump(filtered_history, f, indent=4)
 

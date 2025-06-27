@@ -15,9 +15,12 @@ class Evaluate:
     def _compute_raw_for(self, rc):
         """
         Compute mean and std dev of raw compatibility for room_count == rc.
-        Returns (mean, stdev) or (None, None) if no cases found.
+        Returns (mean, stdev, error_rate) or (None, None, None) if no cases found.
         """
         scores = []
+        target_attempts = 0  # Attempts that were trying to generate rc rooms
+        successful_attempts = 0  # Attempts that actually generated rc rooms
+        
         for folder_name in sorted(os.listdir(self.folder_path),
                                   key=lambda x: int(x) if x.isdigit() else x):
             subfolder = os.path.join(self.folder_path, folder_name)
@@ -26,12 +29,26 @@ class Evaluate:
             try:
                 with open(os.path.join(subfolder, 'prompt.json')) as pf:
                     prompt = json.load(pf)
-                if prompt.get("room_count") != rc:
+
+                # Check if this prompt was trying to generate rc rooms
+                expected_room_count = prompt.get("room_count")
+                if expected_room_count != rc:
                     continue
+                
+                target_attempts += 1
+
                 with open(os.path.join(subfolder, '0.json')) as of:
                     output = json.load(of)
 
                 input_graph    = RPLANGraph.from_ds2d(output)
+                
+                rooms = output.get('rooms', [])
+                door_types = {'front_door', 'interior_door'}
+                actual_room_count = len([room for room in rooms if room.get('room_type', '').lower() not in door_types])
+                if actual_room_count != rc:
+                    continue
+                
+                successful_attempts += 1
                 expected_graph = RPLANGraph.from_labeled_adjacency(
                     prompt["input_graph"]
                 )
@@ -41,11 +58,17 @@ class Evaluate:
             except Exception as e:
                 print(f"Error in folder {folder_name} (rc={rc}): {e}")
 
+        if target_attempts == 0:
+            return None, None, None
+            
+        error_rate = ((target_attempts - successful_attempts) / target_attempts * 100) if target_attempts > 0 else 0
+        
         if not scores:
-            return None, None
+            return None, None, error_rate
+            
         mean  = statistics.mean(scores)
         stdev = statistics.stdev(scores) if len(scores) > 1 else 0.0
-        return mean, stdev
+        return mean, stdev, error_rate
 
     def evaluate(self):
         """
@@ -55,19 +78,29 @@ class Evaluate:
         # Gather stats
         stats = {}
         for rc in self.room_counts:
-            mean, stdev = self._compute_raw_for(rc)
-            if mean is not None:
-                stats[rc] = (mean, stdev)
+            mean, stdev, error_rate = self._compute_raw_for(rc)
+            if mean is not None or error_rate is not None:
+                stats[rc] = (mean, stdev, error_rate)
 
         # Print Markdown table
-        header_cells = ["Model"] + [f"{rc} rooms" for rc in self.room_counts]
+        header_cells = ["Model"]
+        for rc in self.room_counts:
+            header_cells.extend([f"{rc} rooms", f"{rc} error %"])
+        
         header = "| " + " | ".join(header_cells) + " |"
         divider = "|" + "|".join(["------------"] * len(header_cells)) + "|"
 
-        row_cells = ["DS2D v2"] + [
-            f"{stats[rc][0]:.2f} ± {stats[rc][1]:.2f}" if rc in stats else "–"
-            for rc in self.room_counts
-        ]
+        row_cells = ["DS2D v2"]
+        for rc in self.room_counts:
+            if rc in stats:
+                if stats[rc][0] is not None:
+                    row_cells.append(f"{stats[rc][0]:.2f} ± {stats[rc][1]:.2f}")
+                else:
+                    row_cells.append("–")
+                row_cells.append(f"{stats[rc][2]:.1f}%")
+            else:
+                row_cells.extend(["–", "–"])
+        
         row = "| " + " | ".join(row_cells) + " |"
 
         print(header)
