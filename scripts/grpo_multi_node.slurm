@@ -18,8 +18,10 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/r256_a512-Llama-3.3-70B-Instruct"
+MODEL="models/r128_a256-Llama-3.3-70B-Instruct"
 DATASET="datasets/rplan_8"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/70B_r256_GRPO_9n"
+
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
 NUM_TRAIN_NODES=$((NUM_NODES - 1))
@@ -44,7 +46,7 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --machine_rank $SLURM_PROCID  \
      --rdzv_backend c10d \
      src/grpo/train_grpo.py \
-     --output "output/70B_r256_GRPO_${NUM_NODES}n" \
+     --output "${OUTPUT_DIR}" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
      --vllm_server_host $VLLM_NODE &

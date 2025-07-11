@@ -69,12 +69,56 @@ class RPLANGraph:
         room_polys = {}
         door_polys = {}
         name_to_int = {v:k for k,v in ROOM_CLASS.items()}
-        for idx, item in enumerate(data["rooms"]):
-            poly = Polygon([(pt["x"], pt["y"]) for pt in item["floor_polygon"]])
-            if item["room_type"] in ("interior_door", "front_door"):
-                door_polys[idx] = poly
-            else:
-                room_polys[idx] = poly
+        
+        # Validate data structure
+        if not isinstance(data, dict) or "rooms" not in data:
+            print(f"ERROR: from_ds2d data is malformed: {data}")
+            inst.door_idxs = set()
+            inst.graph = nx.Graph()
+            return inst
+            
+        rooms = data["rooms"]
+        if not isinstance(rooms, list):
+            print(f"ERROR: from_ds2d rooms is not a list: {rooms}")
+            inst.door_idxs = set()
+            inst.graph = nx.Graph()
+            return inst
+        
+        for idx, item in enumerate(rooms):
+            # Validate item is a dictionary
+            if not isinstance(item, dict):
+                print(f"ERROR: from_ds2d room {idx} is not a dict: {item}")
+                continue
+                
+            # Validate required keys exist
+            if "floor_polygon" not in item or "room_type" not in item:
+                print(f"ERROR: from_ds2d room {idx} missing required keys: {item}")
+                continue
+                
+            floor_polygon = item["floor_polygon"]
+            if not isinstance(floor_polygon, list):
+                print(f"ERROR: from_ds2d room {idx} floor_polygon is not a list: {floor_polygon}")
+                continue
+            
+            try:
+                coords = []
+                for pt_idx, pt in enumerate(floor_polygon):
+                    if not isinstance(pt, dict) or "x" not in pt or "y" not in pt:
+                        print(f"ERROR: from_ds2d room {idx} point {pt_idx} is malformed: {pt}")
+                        break
+                    coords.append((pt["x"], pt["y"]))
+                
+                if len(coords) != len(floor_polygon):
+                    continue  # Skip this room if any points were invalid
+                    
+                poly = Polygon(coords)
+                if item["room_type"] in ("interior_door", "front_door"):
+                    door_polys[idx] = poly
+                else:
+                    room_polys[idx] = poly
+            except Exception as e:
+                print(f"ERROR: from_ds2d processing room {idx}: {e}")
+                continue
         inst.door_idxs = set(door_polys.keys())
         G = nx.Graph()
         for idx in room_polys:
@@ -194,7 +238,7 @@ class RPLANGraph:
         mistakes = sum(abs(c1[e] - c2[e]) for e in all_edges)
         return mistakes
     
-    def compatibility_score_scaled(self, other: "RPLANGraph") -> int:
+    def compatibility_score_scaled(self, other: "RPLANGraph") -> float:
         def multiset_edges(graph: nx.Graph) -> Counter:
             cnt = Counter()
             for u, v in graph.edges():

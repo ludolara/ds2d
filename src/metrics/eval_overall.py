@@ -6,7 +6,7 @@ from src.utils.list_folders import list_folders
 # from functools import partial
 
 class Evaluate:
-    def __init__(self, root_dir='/network/scratch/l/luozhiha/results/', metrics='all', experiment_list='all', if_separate_num_room_results=False):
+    def __init__(self, root_dir='/network/scratch/l/luozhiha/results/', metrics='all', experiment_list='all', if_separate_num_room_results=True):
         self.root_dir = root_dir
         self.metrics = Metrics(metrics)
         self.model_tags = self.get_model_tags(experiment_list)
@@ -83,9 +83,37 @@ class Evaluate:
         column_avg = strat_df.mean()
         column_std = strat_df.std()
         formatted_stats = {col: f"{column_avg[col]:.2f}±{column_std[col]:.2f}" for col in strat_df.columns}
+
+        print(f"\nMetrics for all rooms:")
         for col, stats in formatted_stats.items():
             print(f"{col}: {stats}")
         
+        # Compute and display metrics per room count if enabled
+        if self.if_separate_num_room_results:
+            for num_rooms in [5, 6, 7, 8]:
+                if num_rooms not in self.RESULTS_separated_by_num_room:
+                    continue  # Skip if no data for this room count
+                room_strat_df = None
+                for model_tag, strat_lookup in self.RESULTS_separated_by_num_room[num_rooms].items():
+                    for strat, results in strat_lookup.items():
+                        summary_room, _ = results.summarize()
+                        df_room = get_df_from_summary_v2(
+                            summary_room,
+                            categories=summary_room.__dict__.keys(),
+                            strat_name=f"{model_tag} {strat} avg"
+                        )
+                        room_strat_df = df_room if room_strat_df is None else pd.concat([room_strat_df, df_room], axis=0)
+
+                if room_strat_df is None:
+                    continue
+
+                room_avg = room_strat_df.mean()
+                room_std = room_strat_df.std()
+                formatted_room_stats = {col: f"{room_avg[col]:.2f}±{room_std[col]:.2f}" for col in room_strat_df.columns}
+
+                print(f"\nMetrics for {num_rooms} rooms:")
+                for col, stats in formatted_room_stats.items():
+                    print(f"{col}: {stats}")
     
     def get_model_tags(self, experiment_list):
         model_tags = []

@@ -135,13 +135,16 @@ class FloorplanGenerator:
         def _key(cand):
             output = extract_output_json(cand.text)
             analysis = FeedbackGenerator.analyze(output, input_prompt)
-            overlap = analysis['total_overlap_area']
+            overlap = analysis.get('total_overlap_area', float('inf'))
 
-            input_graph = RPLANGraph.from_ds2d(output)
-            expected_graph = RPLANGraph.from_labeled_adjacency(
-                input_prompt["input_graph"]
-            )
-            compatibility_score = input_graph.compatibility_score(expected_graph)
+            try:
+                input_graph = RPLANGraph.from_ds2d(output)
+                expected_graph = RPLANGraph.from_labeled_adjacency(
+                    input_prompt.get("input_graph", {})
+                )
+                compatibility_score = input_graph.compatibility_score(expected_graph)
+            except Exception:
+                compatibility_score = float('inf')
 
             return (overlap, compatibility_score)
 
@@ -171,7 +174,7 @@ class FloorplanGenerator:
                 for pos, idx in enumerate(unresolved_indices):
                     if self.sampling_params is not None:
                         # output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
-                        output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
+                        output_json = self._select_least_two(outputs[pos].outputs, create_input(samples[idx], is_str=False))
                         output_json = extract_output_json(output_json.text)
                     else:
                         generated_text = outputs[pos].outputs[0]

@@ -6,7 +6,7 @@
 #SBATCH --mem=64G 
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=0:59:00
+#SBATCH --time=1:59:00
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
@@ -20,18 +20,19 @@ TEST_RANGE=${1:-"1,768"}
 
 python src/pred/run_generation.py \
     --batch_size 64 \
-    --model_name_or_path "output/70B_r256_GRPO_9n/checkpoint-400" \
+    --model_name_or_path "/home/l/luislara/links/projects/aip-pal/luislara/output/70B_r256_GRPO_9n/checkpoint-1600" \
     --feedback_iterations 1 \
     --dataset_name_or_path "datasets/rplan_8" \
-    --output_dir "results_70B_r256_GRPO_sampling/generations/rplan_8_70B/full_prompt" \
+    --output_dir "results_GRPO_70B_r128_a256_allu_ckpt1600_sampling/generations/rplan_8_70B/full_prompt" \
     --test_range "$TEST_RANGE" \
     --use_sampling
 
 # python src/pred/run_generation.py \
 #     --batch_size 64 \
 #     --model_name_or_path "models/Llama-3.3-70B-Instruct" \
-#     --lora_adapter_path "output/rplan_8_70B_r256_a512_all" \
+#     --lora_adapter_path "output/rplan_28_70B_r64_a128" \
 #     --feedback_iterations 1 \
 #     --dataset_name_or_path "datasets/rplan_8" \
-#     --output_dir "results_70B_r256_a512/generations/rplan_8_70B/full_prompt" \
+#     --output_dir "results_70B_r64_a128_val/generations/rplan_8_70B/full_prompt" \
 #     --test_range "$TEST_RANGE" \
+#     --split "validation"

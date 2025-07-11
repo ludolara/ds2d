@@ -2,6 +2,7 @@ import os
 import json
 import statistics
 from src.dataset_convert.rplan_graph import RPLANGraph
+from src.utils.json_check.verify import is_valid_json
 
 class Evaluate:
     """
@@ -39,8 +40,11 @@ class Evaluate:
 
                 with open(os.path.join(subfolder, '0.json')) as of:
                     output = json.load(of)
+                
+                if not is_valid_json(output):
+                    continue
 
-                input_graph    = RPLANGraph.from_ds2d(output)
+                input_graph = RPLANGraph.from_ds2d(output)
                 
                 rooms = output.get('rooms', [])
                 door_types = {'front_door', 'interior_door'}
@@ -56,7 +60,8 @@ class Evaluate:
                     input_graph.compatibility_score(expected_graph)
                 )
             except Exception as e:
-                print(f"Error in folder {folder_name} (rc={rc}): {e}")
+                # print(f"Error in folder {folder_name} (rc={rc}): {e}")
+                continue
 
         if target_attempts == 0:
             return None, None, None

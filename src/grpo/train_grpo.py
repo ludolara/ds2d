@@ -17,7 +17,8 @@ def main():
     parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
     parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
-    parser.add_argument("--num_eval_examples", type=int, default=800, help="Number of examples to use for evaluation")
+    parser.add_argument("--num_eval_examples", type=int, default=400, help="Number of examples to use for evaluation")
+    # parser.add_argument("--num_eval_examples", type=int, default=10, help="Number of examples to use for evaluation")
     parser.add_argument("--no_eval", action="store_true", help="Disable evaluation during training")
     
     args = parser.parse_args()
@@ -26,7 +27,7 @@ def main():
     
     train_dataset = (
         dataset["train"]
-        .rename_column("input", "prompt")
+        # .rename_column("input", "prompt")
         .map(lambda x: {"prompt": build_prompt(x["prompt"])})
     )
     
@@ -35,38 +36,38 @@ def main():
         eval_dataset = (
             dataset["validation"]
             .select(range(min(args.num_eval_examples, len(dataset["validation"])))) 
-            .rename_column("input", "prompt")
+            # .rename_column("input", "prompt")
             .map(lambda x: {"prompt": build_prompt(x["prompt"])})
         )
     
     do_eval = not args.no_eval
     training_args = GRPOConfig(
         output_dir=args.output,
-        per_device_train_batch_size=2,
-
-        # num_generations=16,
+        per_device_train_batch_size=1,
+        num_generations=4,
+        
         # gradient_accumulation_steps=4,
         # logging_steps=1,
-        # save_steps=4,
-        # eval_steps=4 if do_eval else None, 
+        # save_steps=8,
+        # eval_steps=8 if do_eval else None, 
 
         max_prompt_length=4096,
         max_completion_length=4096,
         bf16=True,
         gradient_checkpointing=True,
         logging_steps=50,
-        save_steps=100,
-        save_total_limit=2,
-        # save_only_model=True, #remove this line to save the entire trainer
+        save_steps=200,
+        eval_steps=200 if do_eval else None, 
+        save_total_limit=3,
         report_to="wandb",
         use_vllm=True,
         vllm_server_host=args.vllm_server_host,
         resume_from_checkpoint=True,
         do_eval=do_eval,
         eval_strategy="steps" if do_eval else "no",
-        eval_steps=100 if do_eval else None, 
-        per_device_eval_batch_size=2,
+        per_device_eval_batch_size=1,
         log_level="info",
+        warmup_steps=100,
     )
 
     reward_calculator = RewardCalculator()

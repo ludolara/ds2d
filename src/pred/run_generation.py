@@ -8,7 +8,7 @@ def parse_arguments():
     parser.add_argument("--model_name_or_path", type=str, default="models/Llama-3.3-70B-Instruct")
     parser.add_argument("--lora_adapter_path", type=str, default=None)
     parser.add_argument("--dataset_name_or_path", type=str, default="datasets/rplan_converted")
-    parser.add_argument("--test_split", type=str, default="test")
+    parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--test_range", type=str, default=None, help="Specify range of test examples to use (e.g., '1,101' for the first 100 samples)")
     parser.add_argument("--max_new_tokens", type=int, default=4096)
     parser.add_argument("--batch_size", type=int, default=8)
@@ -31,7 +31,7 @@ def main():
         generator = FloorplanGeneratorOpenAI(
             model_name_or_path=args.model_name_or_path,
             lora_adapter_path=args.lora_adapter_path,
-            test_split=args.test_split,
+            test_split=args.split,
             test_range=args.test_range,
             max_new_tokens=args.max_new_tokens,
             batch_size=args.batch_size,
@@ -43,7 +43,7 @@ def main():
             model_name_or_path=args.model_name_or_path,
             lora_adapter_path=args.lora_adapter_path,
             dataset_name_or_path=args.dataset_name_or_path,
-            test_split=args.test_split,
+            test_split=args.split,
             test_range=args.test_range,
             max_new_tokens=args.max_new_tokens,
             batch_size=args.batch_size,

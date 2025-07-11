@@ -16,9 +16,8 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-8} 
-# OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r256_a512_all/"
-OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan_${EPOCHS}_70B_r256_a512_all/"
+EPOCHS=${1:-28} 
+OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r64_a128/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -59,9 +58,12 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --batch_size_training 2 \
     --num_epochs $EPOCHS \
     --dataset custom_dataset \
-    --context_length 4096 \
+    --context_length 6144 \
     --enable_fsdp True \
     --num_workers_dataloader 32 \
+    --from_peft_checkpoint $OUTPUT_DIR \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
-    --wandb_config.project "floorplans"
+    --wandb_config.project "ds2d"
+
+# --from_peft_checkpoint "output/rplan_25_70B" \

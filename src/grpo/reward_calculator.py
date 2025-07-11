@@ -11,14 +11,20 @@ class RewardCalculator:
         if self._cache["key"] != key:
             self._cache["stats"] = [
                 FeedbackGenerator.grpo_feedback(
-                    extract_output_json(comp),
-                    {"room_count": rc, "total_area": ta, "input_graph": ig}
+                    comp,
+                    {
+                        "room_count": rc,
+                        "total_area": ta,
+                        "input_graph": ig,
+                        "rooms": rooms
+                    }
                 )
-                for comp, rc, ta, ig in zip(
+                for comp, rc, ta, ig, rooms in zip(
                     completions,
                     kwargs.get("room_count", []),
                     kwargs.get("total_area", []),
                     kwargs.get("input_graph", {}),
+                    kwargs.get("rooms", [])
                 )
             ]
             self._cache["key"] = key

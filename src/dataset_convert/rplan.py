@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from pathlib import Path
 from datasets import DatasetDict, Dataset
 from sklearn.model_selection import train_test_split
-import random
 from shapely.geometry import LineString
 from shapely.ops import polygonize
 from shapely.affinity import scale
@@ -126,7 +125,7 @@ class RPLANConverter:
             # "room_types": [r["room_type"] for r in only_rooms],
             "input_graph": json.dumps(input_graph),
             "rooms": spaces,
-            "input": str(input_data)
+            "prompt": str(input_data)
         }
 
     def create_dataset(self, raw: List[Dict[str, Any]]) -> DatasetDict:
@@ -141,9 +140,9 @@ class RPLANConverter:
         else:
             target_room_plans = [item for item in converted if item["room_count"] == self.room_number]
             other_plans = [item for item in converted if item["room_count"] != self.room_number]
-            test, val = train_test_split(target_room_plans, test_size=0.5, shuffle=True)
-            random.shuffle(other_plans)
-            train = other_plans
+            test = target_room_plans
+
+            train, val = train_test_split(other_plans, test_size=0.1, shuffle=True)
 
         return DatasetDict({
             "train": Dataset.from_list(train),

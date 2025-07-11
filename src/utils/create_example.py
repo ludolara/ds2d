@@ -15,7 +15,7 @@ def create_input(sample, is_str=True):
             }
             for room in sample.get("rooms", [])
         ],
-        "input_graph": json.loads(sample.get("input_graph", [])),
+        "input_graph": json.loads(sample.get("input_graph", "{}")),
     }
     if is_str:
         return str({"input": inp})
