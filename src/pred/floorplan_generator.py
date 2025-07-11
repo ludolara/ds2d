@@ -118,14 +118,14 @@ class FloorplanGenerator:
 
         return re_prompt
     
-    def _select_least_overlap(self, candidates, input_prompt):
-        return min(
-            candidates,
-            key=lambda cand: FeedbackGenerator.analyze(
-                extract_output_json(cand.text),
-                input_prompt
-            )['total_overlap_area']
-        ) 
+    # def _select_least_overlap(self, candidates, input_prompt):
+    #     return min(
+    #         candidates,
+    #         key=lambda cand: FeedbackGenerator.analyze(
+    #             extract_output_json(cand.text),
+    #             input_prompt
+    #         )['total_overlap_area']
+    #     ) 
     
     def _select_least_two(self, candidates, input_prompt):
         """
@@ -150,86 +150,33 @@ class FloorplanGenerator:
 
         return min(candidates, key=_key)
 
-    def generate_floorplans_with_feedback(self, feedback_iterations=3):
-        for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans with feedback"):
+    def generate_floorplans(self):
+        for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans"):
             raw_batch = self.dataset[i: i + self.batch_size]
             samples = [dict(zip(raw_batch.keys(), t)) for t in zip(*raw_batch.values())]
-            current_prompts = [self._build_prompt(sample) for sample in samples]
-            resolved = [False] * len(samples)
-            histories = [[] for _ in range(len(samples))]
+            batch_prompts = [self._build_prompt(sample) for sample in samples]
 
-            for iteration in range(feedback_iterations):
-                unresolved_indices = [idx for idx, done in enumerate(resolved) if not done]
-                if not unresolved_indices:
-                    break
+            outputs = self.model.generate(
+                batch_prompts,
+                self.sampling_params,
+                lora_request=self.lora_request
+            )
 
-                batch_prompts = [current_prompts[idx] for idx in unresolved_indices]
+            for idx, sample in enumerate(samples):
+                if self.use_sampling:
+                    # output_json = self._select_least_overlap(outputs[idx].outputs, create_input(sample, is_str=False))
+                    output_json = self._select_least_two(outputs[idx].outputs, create_input(sample, is_str=False))
+                    output_json = extract_output_json(output_json.text)
+                else:
+                    generated_text = outputs[idx].outputs[0]
+                    output_json = extract_output_json(generated_text.text)
 
-                outputs = self.model.generate(
-                    batch_prompts,
-                    self.sampling_params,
-                    lora_request=self.lora_request
-                )
+                sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
+                os.makedirs(sample_dir, exist_ok=True)
 
-                for pos, idx in enumerate(unresolved_indices):
-                    if self.sampling_params is not None:
-                        # output_json = self._select_least_overlap(outputs[pos].outputs, create_input(samples[idx], is_str=False))
-                        output_json = self._select_least_two(outputs[pos].outputs, create_input(samples[idx], is_str=False))
-                        output_json = extract_output_json(output_json.text)
-                    else:
-                        generated_text = outputs[pos].outputs[0]
-                        output_json = extract_output_json(generated_text.text)
-
-                    sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
-                    # sample_dir_feedback = os.path.join(sample_dir, "feedback")
-                    os.makedirs(sample_dir, exist_ok=True)
-                    # os.makedirs(sample_dir_feedback, exist_ok=True)
-
-                    input_prompt = create_input(samples[idx], is_str=False)
-                    with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
-                        json.dump(input_prompt, f, indent=4)
-                    with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:
-                        json.dump(output_json, f, indent=4)
-                    # with open(os.path.join(sample_dir_feedback, f"iteration_{iteration}.json"), "w", encoding="utf-8") as f:
-                    #     json.dump(output_json, f, indent=4)
-
-                    overlap_metrics = FeedbackGenerator.analyze(output_json, input_prompt)
-
-                    current_feedback = ""
-                    if (overlap_metrics["is_overlapping"] or 
-                        not overlap_metrics["is_valid_json"] or 
-                        not overlap_metrics["room_count"]["match"] or 
-                        # not overlap_metrics["room_types"]["match"] or 
-                        not overlap_metrics["total_area"]["match"]):
-                        current_feedback += FeedbackGenerator.create_feedback(overlap_metrics)
-                    else:
-                        resolved[idx] = True
-                        current_feedback = "No issues detected."
-
-                    attempt = {
-                        "output": output_json,
-                        "iteration": iteration,
-                        "feedback": current_feedback,
-                        "metrics": overlap_metrics
-                    }
-                    histories[idx].append(attempt)
-
-                    if not resolved[idx]:
-                        new_prompt = self._build_re_prompt(
-                            samples[idx],
-                            history=histories[idx]
-                        )
-                        current_prompts[idx] = new_prompt
-
-                    #     with open(os.path.join(sample_dir_feedback, "feedback.txt"), "a", encoding="utf-8") as f:
-                    #         f.writelines(new_prompt)
-                    #         f.writelines("=" * 20)
-                    #         f.write("\n")
-
-                    # with open(os.path.join(sample_dir_feedback, "feedback.json"), "w", encoding="utf-8") as f:
-                    #     filtered_history = [
-                    #         {key: value for key, value in entry.items() if key != "output"}
-                    #         for entry in histories[idx]
-                    #     ]
-                    #     json.dump(filtered_history, f, indent=4)
+                input_prompt = create_input(sample, is_str=False)
+                with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
+                    json.dump(input_prompt, f, indent=4)
+                with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:
+                    json.dump(output_json, f, indent=4)
 

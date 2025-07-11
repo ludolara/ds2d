@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass, field
+import random
 from typing import Any, Dict, List
 from pathlib import Path
 from datasets import DatasetDict, Dataset
@@ -79,17 +80,20 @@ class RPLANConverter:
                 poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0,0))
                 area = round(poly.area, self.round_value)
                 minx, miny, maxx, maxy = poly.bounds
-                spaces.append({
+                is_rectangular = (len(poly.exterior.coords) - 1) == 4
+
+                room_data = {
                     **room,
                     "area": area,
-                    "width": round(maxx - minx, self.round_value),
-                    "height": round(maxy - miny, self.round_value),
-                    "is_rectangular": 1 if (len(poly.exterior.coords) - 1) == 4 else 0,
+                    "width": round(maxx - minx, self.round_value) if is_rectangular else 0,
+                    "height": round(maxy - miny, self.round_value) if is_rectangular else 0,
                     "floor_polygon": [
                         {"x": round(x, self.round_value), "y": round(y, self.round_value)}
                         for x, y in poly.exterior.coords[:-1]
                     ]
-                })
+                }
+                
+                spaces.append(room_data)
                 if room["room_type"] not in ["interior_door", "front_door"]:
                     total_area += area
             except Exception as e:
@@ -102,18 +106,35 @@ class RPLANConverter:
             "ed_rm": data["ed_rm"]
         })
         input_graph = fp_graph.to_labeled_adjacency()
-        # remove entries with rooms with empty array
+        # remove entries with spaces with empty array
         if any(not neigh for neigh in input_graph.values()) or not nx.is_connected(nx.from_dict_of_lists(input_graph)):
             return None
         
         only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door", "front_door"]]
+        input_rooms = []
+        for room in only_rooms:
+        # for room in spaces:
+            if room["height"] == 0 and room["width"] == 0:
+                input_room = {
+                    "id": room["id"],
+                    "room_type": room["room_type"],
+                    "area": room["area"]
+                }
+            else:
+                input_room = {
+                    "id": room["id"],
+                    "room_type": room["room_type"],
+                    "height": room["height"],
+                    "width": room["width"]
+                }
+            input_rooms.append(input_room)
 
         # create input
         input_data = {
             "input": {
                 "room_count": len(only_rooms),
                 "total_area": round(total_area, self.round_value),
-                "rooms": only_rooms,
+                "spaces": input_rooms,
                 "input_graph": input_graph
             }
         }
@@ -122,9 +143,8 @@ class RPLANConverter:
             "rplan_id": data.get("rplan_id"),
             "room_count": len(only_rooms),
             "total_area": round(total_area, self.round_value),
-            # "room_types": [r["room_type"] for r in only_rooms],
             "input_graph": json.dumps(input_graph),
-            "rooms": spaces,
+            "spaces": spaces,
             "prompt": str(input_data)
         }
 
@@ -140,9 +160,9 @@ class RPLANConverter:
         else:
             target_room_plans = [item for item in converted if item["room_count"] == self.room_number]
             other_plans = [item for item in converted if item["room_count"] != self.room_number]
-            test = target_room_plans
-
-            train, val = train_test_split(other_plans, test_size=0.1, shuffle=True)
+            test, val = train_test_split(target_room_plans, test_size=0.5, shuffle=True)
+            random.shuffle(other_plans)
+            train = other_plans
 
         return DatasetDict({
             "train": Dataset.from_list(train),
@@ -169,4 +189,6 @@ if __name__ == "__main__":
     ds = converter("datasets/rplan_json")
     ds.save_to_disk(f"datasets/rplan_{room_number}")
     print(ds)
-    print("Done. Sample:", ds["train"][0])
+    print("Train sample:", ds["train"][0])
+    print("Test sample:", ds["test"][0])
+    print("Val sample:", ds["validation"][0])

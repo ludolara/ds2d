@@ -11,11 +11,11 @@ Your top priority is that no two room polygons ever overlap. Rooms must be stric
 
 Your output must be a JSON object, where `output` key contains:
 - `room_count`: the total number of room entries  
-- `rooms`: a list of mixing rooms and doors. Each room or door entry in `room` must include:
- - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
- - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
- - `area` in square meters (all positive numbers)  
- - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
+- `spaces`: a list of mixing rooms and doors. Each room or door entry must include:
+   - `id`: formatted as `<room_type>|<unique_index>` (e.g. `"bedroom|2"` or `"interior_door|0"`)  
+   - `room_type`: the room type (e.g. `"living_room"`, `"kitchen"`, etc.)
+   - `area` in square meters (all positive numbers)  
+   - `floor_polygon`: an ordered list of `{x: , y:}` vertices defining a simple polygon  
 
 Additional rules:
 - **Absolute non-overlap**: no two room polygons may share any interior point under any circumstances.

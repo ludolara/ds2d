@@ -16,7 +16,7 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-28} 
+EPOCHS=${1:-30} 
 OUTPUT_DIR="output/rplan_${EPOCHS}_70B_r64_a128/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
@@ -61,7 +61,6 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --context_length 6144 \
     --enable_fsdp True \
     --num_workers_dataloader 32 \
-    --from_peft_checkpoint $OUTPUT_DIR \
     --output_dir $OUTPUT_DIR \
     --use_wandb True \
     --wandb_config.project "ds2d"
