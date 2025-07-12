@@ -3,11 +3,11 @@ import json
 from tqdm import tqdm
 from dotenv import load_dotenv
 from src.dataset_convert.rplan_graph import RPLANGraph
-from src.utils import create_input
+from src.utils import build_prompt
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
 from datasets import load_from_disk
-from src.utils.constants import SYSTEM_PROMPT, SYSTEM_RE_PROMPT
+# from src.utils.constants import SYSTEM_PROMPT, SYSTEM_RE_PROMPT
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 
@@ -82,52 +82,15 @@ class FloorplanGenerator:
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def _build_prompt(self, sample):
-        prompt = (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
-            f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-            f"{create_input(sample)}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-        )
-        return prompt
-
-    def _build_re_prompt(self, sample, history=None):
-        system_prompt = (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n {SYSTEM_RE_PROMPT} \n"
-        )
-
-        history_prompt = ""
-        if history:
-            for i, attempt in enumerate(history):
-                history_prompt += f"- Attempt {i + 1}:\n"
-                if i == len(history) - 1:
-                    history_prompt += f"    Output: {json.dumps(attempt['output'])}\n"
-                history_prompt += f"    Feedback: {attempt.get('feedback', '[No feedback provided]')}\n"
-
-            history_prompt = (
-                f"<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-                f"Below are details of your past attempts:\n{history_prompt}\n"
-                f"This will be the attempt number {len(history) + 1} to generate a valid floor plan. Please take all the above into account and try again.\n "
-            )
-        
-        re_prompt = (
-            f"{system_prompt}"
-            f"{history_prompt}"
-            f"<|eot_id|><|start_header_id|>user<|end_header_id|>\n{create_input(sample)}"
-            f"<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-        )
-
-        return re_prompt
+    # def _build_prompt(self, sample):
+    #     prompt = (
+    #         f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
+    #         f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
+    #         f"{sample.get("prompt", {})}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+    #     )
+    #     return prompt
     
-    # def _select_least_overlap(self, candidates, input_prompt):
-    #     return min(
-    #         candidates,
-    #         key=lambda cand: FeedbackGenerator.analyze(
-    #             extract_output_json(cand.text),
-    #             input_prompt
-    #         )['total_overlap_area']
-    #     ) 
-    
-    def _select_least_two(self, candidates, input_prompt):
+    def _select_least(self, candidates, input_prompt):
         """
         Return the candidate minimizing first total_overlap_area,
         then compatibility_score.
@@ -154,7 +117,7 @@ class FloorplanGenerator:
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans"):
             raw_batch = self.dataset[i: i + self.batch_size]
             samples = [dict(zip(raw_batch.keys(), t)) for t in zip(*raw_batch.values())]
-            batch_prompts = [self._build_prompt(sample) for sample in samples]
+            batch_prompts = [build_prompt(sample) for sample in samples]
 
             outputs = self.model.generate(
                 batch_prompts,
@@ -163,9 +126,10 @@ class FloorplanGenerator:
             )
 
             for idx, sample in enumerate(samples):
+                input_prompt = json.loads(sample.get("prompt", {}))
                 if self.use_sampling:
                     # output_json = self._select_least_overlap(outputs[idx].outputs, create_input(sample, is_str=False))
-                    output_json = self._select_least_two(outputs[idx].outputs, create_input(sample, is_str=False))
+                    output_json = self._select_least(outputs[idx].outputs, input_prompt)
                     output_json = extract_output_json(output_json.text)
                 else:
                     generated_text = outputs[idx].outputs[0]
@@ -174,7 +138,6 @@ class FloorplanGenerator:
                 sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                 os.makedirs(sample_dir, exist_ok=True)
 
-                input_prompt = create_input(sample, is_str=False)
                 with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
                     json.dump(input_prompt, f, indent=4)
                 with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:

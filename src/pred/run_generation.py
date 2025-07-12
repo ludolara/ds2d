@@ -11,7 +11,6 @@ def parse_arguments():
     parser.add_argument("--test_range", type=str, default=None, help="Specify range of test examples to use (e.g., '1,101' for the first 100 samples)")
     parser.add_argument("--max_new_tokens", type=int, default=4096)
     parser.add_argument("--batch_size", type=int, default=8)
-
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--output_dir", type=str, default="results_feedback/generations/rplan_3_70B/full_prompt", help="Directory to store the generated outputs")
     parser.add_argument("--use_sampling", action="store_true", help="Whether to use sampling mode")

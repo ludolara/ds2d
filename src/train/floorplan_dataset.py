@@ -1,7 +1,7 @@
 from datasets import load_from_disk
-from utils.constants import SYSTEM_PROMPT
+# from utils.constants import SYSTEM_PROMPT
 # from utils import create_input, create_output
-from utils import create_output
+from utils import create_output, build_prompt
 import random
 
 def shuffle_rooms(example):
@@ -15,14 +15,7 @@ def get_custom_dataset(dataset_config, tokenizer, split):
     dataset = dataset.with_transform(shuffle_rooms)
 
     def process_sample(sample):
-        system_prompt = SYSTEM_PROMPT
-
-        prompt = (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
-            f"{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-            # f"{create_input(sample)}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-            f"{sample.get("prompt")}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-        )
+        prompt = build_prompt(sample)
         
         prompt_tokens = tokenizer(prompt, add_special_tokens=False)
         

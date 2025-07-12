@@ -112,8 +112,9 @@ class RPLANConverter:
         
         only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door", "front_door"]]
         input_rooms = []
-        for room in only_rooms:
+
         # for room in spaces:
+        for room in only_rooms:
             if room["height"] == 0 and room["width"] == 0:
                 input_room = {
                     "id": room["id"],

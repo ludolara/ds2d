@@ -1,5 +1,4 @@
-from src.pred.extract_output_json import extract_output_json
-from src.pred.feedback_generator import FeedbackGenerator
+from src.grpo.grpo_evaluator import GRPOEvaluator
 from typing import Any, Callable, Dict, List
 
 class RewardCalculator:
@@ -10,7 +9,7 @@ class RewardCalculator:
         key = id(completions[0] + completions[-1])
         if self._cache["key"] != key:
             self._cache["stats"] = [
-                FeedbackGenerator.grpo_feedback(
+                GRPOEvaluator.evaluate(
                     comp,
                     {
                         "room_count": rc,
