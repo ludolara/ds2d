@@ -3,8 +3,11 @@ from peft import PeftModel
 import torch
 
 base_model_path = "models/Llama-3.3-70B-Instruct"       
-adapter_path = "output/rplan_5_70B_r128_a256"            
-merged_model_path = "models/r128_a256-Llama-3.3-70B-Instruct"
+adapter_path = "output/rplan_3_70B_r64_a128_all"            
+merged_model_path = "models/r64_a128-Llama-3.3-70B-Instruct"
+# base_model_path = "models/Llama-3.1-8B-Instruct"       
+# adapter_path = "output/rplan_6_8B_r256_a512"            
+# merged_model_path = "models/r256_a512-Llama-3.1-8B-Instruct"
 
 base_model = AutoModelForCausalLM.from_pretrained(
     base_model_path,

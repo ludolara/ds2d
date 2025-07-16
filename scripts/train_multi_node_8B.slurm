@@ -6,7 +6,7 @@
 #SBATCH --mem=196G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=23:59:00
+#SBATCH --time=11:59:00
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
@@ -16,7 +16,7 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-30} 
+EPOCHS=${1:-6} 
 OUTPUT_DIR="output/rplan_${EPOCHS}_8B_r256_a512/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )

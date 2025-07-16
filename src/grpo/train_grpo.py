@@ -27,8 +27,7 @@ def main():
     
     train_dataset = (
         dataset["train"]
-        # .rename_column("input", "prompt")
-        .map(lambda x: {"prompt": build_prompt(x["prompt"])})
+        .map(lambda x: {"prompt": build_prompt(x)})
     )
     
     eval_dataset = None
@@ -36,8 +35,7 @@ def main():
         eval_dataset = (
             dataset["validation"]
             .select(range(min(args.num_eval_examples, len(dataset["validation"])))) 
-            # .rename_column("input", "prompt")
-            .map(lambda x: {"prompt": build_prompt(x["prompt"])})
+            .map(lambda x: {"prompt": build_prompt(x)})
         )
     
     do_eval = not args.no_eval
@@ -46,7 +44,6 @@ def main():
         per_device_train_batch_size=1,
         num_generations=4,
         
-        # gradient_accumulation_steps=4,
         # logging_steps=1,
         # save_steps=8,
         # eval_steps=8 if do_eval else None, 

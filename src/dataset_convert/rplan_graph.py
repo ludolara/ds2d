@@ -71,20 +71,20 @@ class RPLANGraph:
         name_to_int = {v:k for k,v in ROOM_CLASS.items()}
         
         # Validate data structure
-        if not isinstance(data, dict) or "rooms" not in data:
+        if not isinstance(data, dict) or "spaces" not in data:
             print(f"ERROR: from_ds2d data is malformed: {data}")
             inst.door_idxs = set()
             inst.graph = nx.Graph()
             return inst
             
-        rooms = data["rooms"]
-        if not isinstance(rooms, list):
-            print(f"ERROR: from_ds2d rooms is not a list: {rooms}")
+        spaces = data["spaces"]
+        if not isinstance(spaces, list):
+            print(f"ERROR: from_ds2d spaces is not a list: {spaces}")
             inst.door_idxs = set()
             inst.graph = nx.Graph()
             return inst
         
-        for idx, item in enumerate(rooms):
+        for idx, item in enumerate(spaces):
             # Validate item is a dictionary
             if not isinstance(item, dict):
                 print(f"ERROR: from_ds2d room {idx} is not a dict: {item}")
@@ -122,11 +122,11 @@ class RPLANGraph:
         inst.door_idxs = set(door_polys.keys())
         G = nx.Graph()
         for idx in room_polys:
-            rt_int = name_to_int.get(data["rooms"][idx]["room_type"], name_to_int["unknown"])
+            rt_int = name_to_int.get(data["spaces"][idx]["room_type"], name_to_int["unknown"])
             G.add_node(idx, room_type=rt_int)
         
         for door_idx, door_poly in door_polys.items():
-            door_room_type = data["rooms"][door_idx]["room_type"]
+            door_room_type = data["spaces"][door_idx]["room_type"]
             if door_room_type == "front_door":
                 continue
                 
@@ -134,7 +134,7 @@ class RPLANGraph:
             touching = [i for i,p in room_polys.items() if buf.intersects(p)]
             
             for a,b in combinations(touching, 2):
-                # Validation 1: Check if the door is close to the gap between the two rooms
+                # Validation 1: Check if the door is close to the gap between the two spaces
                 room_a_poly = room_polys[a]
                 room_b_poly = room_polys[b]
                 

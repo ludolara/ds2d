@@ -18,9 +18,9 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/r128_a256-Llama-3.3-70B-Instruct"
+MODEL="models/r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/rplan_8"
-OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/70B_r256_GRPO_9n"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/70B_r64_GRPO_9n"
 
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}

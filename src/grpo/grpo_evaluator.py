@@ -1,6 +1,7 @@
 from shapely.geometry import Polygon
 from src.pred.extract_output_json import extract_output_json
 from src.dataset_convert.rplan_graph import RPLANGraph
+# from src.utils.json_check.verify import is_valid_json, is_valid_json_feedback
 from src.utils.json_check.verify import is_valid_json
 import json
 
@@ -14,7 +15,7 @@ class GRPOEvaluator:
             polygons_overlap = {}
             polygons_area = {} # (excluding doors)
             
-            for idx, room in enumerate(output_floor_plan.get("rooms", [])):
+            for idx, room in enumerate(output_floor_plan.get("spaces", [])):
                 pts = room.get("floor_polygon", [])
                 room_type = room.get("room_type", "unknown")
                 try:
@@ -45,16 +46,17 @@ class GRPOEvaluator:
             overlap_ratio = total_overlap / total_area if total_area > 0 else 0
             is_overlap = (round(overlap_ratio, round_digits-1) != 0)
 
+            # is_valid, feedback = is_valid_json_feedback(output_floor_plan)
             is_valid = is_valid_json(output_floor_plan)
 
-            expected_room_count = input_prompt.get("room_count", 0)
+            # expected_room_count = input_prompt.get("room_count", 0)
             expected_total_area = input_prompt.get("total_area", 0)
 
-            if expected_room_count > 0:
-                actual_room_count = len(polygons_area)
-                room_count_match = (actual_room_count == expected_room_count)
-            else:
-                room_count_match = False
+            # if expected_room_count > 0:
+            #     actual_room_count = len(polygons_area)
+            #     room_count_match = (actual_room_count == expected_room_count)
+            # else:
+            #     room_count_match = False
             
             if expected_total_area > 0:
                 total_area_ratio = total_area / expected_total_area
@@ -78,7 +80,6 @@ class GRPOEvaluator:
 
 # Metrics:
 # - JSON validity: {is_valid}
-# - Room count: {room_count_match}
 # - Total area: {total_area_ratio}
 # - Is overlap: {is_overlap}
 # - Compatibility score: {compatibility_score}
@@ -87,7 +88,7 @@ class GRPOEvaluator:
 
             return {
                 "is_valid_json": is_valid,
-                "room_count": room_count_match,
+                # "room_count": room_count_match,
                 "total_area": round(total_area_ratio, round_digits),
                 "is_overlap": is_overlap,
                 "compatibility": round(compatibility_score, round_digits)

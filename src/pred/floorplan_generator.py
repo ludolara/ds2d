@@ -1,3 +1,4 @@
+import ast
 import os
 import json
 from tqdm import tqdm
@@ -126,7 +127,8 @@ class FloorplanGenerator:
             )
 
             for idx, sample in enumerate(samples):
-                input_prompt = json.loads(sample.get("prompt", {}))
+                input_prompt = ast.literal_eval(sample.get("prompt", "{}"))
+                input_prompt = input_prompt["input"]
                 if self.use_sampling:
                     # output_json = self._select_least_overlap(outputs[idx].outputs, create_input(sample, is_str=False))
                     output_json = self._select_least(outputs[idx].outputs, input_prompt)

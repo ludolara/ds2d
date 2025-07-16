@@ -42,7 +42,7 @@ class Floorplan():
     
     def get_rooms(self):
         try:
-            all_rooms = self.floorplan["rooms"]
+            all_rooms = self.floorplan["spaces"]
             filtered_rooms = []
             for room in all_rooms:
                 room_type = room.get("room_type", "").lower()

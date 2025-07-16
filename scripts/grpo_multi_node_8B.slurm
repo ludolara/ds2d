@@ -6,7 +6,7 @@
 #SBATCH --mem=96G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=0:59:00
+#SBATCH --time=5:59:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -18,7 +18,7 @@ source $SCRATCH/env/vllm/bin/activate
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
 
-MODEL="models/r256-Llama-3.1-8B-Instruct"
+MODEL="models/r256_a512-Llama-3.1-8B-Instruct"
 DATASET="datasets/rplan_8"
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}

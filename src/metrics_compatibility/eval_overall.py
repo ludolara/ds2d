@@ -19,8 +19,8 @@ class Evaluate:
         Returns (mean, stdev, error_rate) or (None, None, None) if no cases found.
         """
         scores = []
-        target_attempts = 0  # Attempts that were trying to generate rc rooms
-        successful_attempts = 0  # Attempts that actually generated rc rooms
+        target_attempts = 0  # Attempts that were trying to generate rc spaces
+        successful_attempts = 0  # Attempts that actually generated rc spaces
         
         for folder_name in sorted(os.listdir(self.folder_path),
                                   key=lambda x: int(x) if x.isdigit() else x):
@@ -31,7 +31,7 @@ class Evaluate:
                 with open(os.path.join(subfolder, 'prompt.json')) as pf:
                     prompt = json.load(pf)
 
-                # Check if this prompt was trying to generate rc rooms
+                # Check if this prompt was trying to generate rc spaces
                 expected_room_count = prompt.get("room_count")
                 if expected_room_count != rc:
                     continue
@@ -46,9 +46,9 @@ class Evaluate:
 
                 input_graph = RPLANGraph.from_ds2d(output)
                 
-                rooms = output.get('rooms', [])
+                spaces = output.get('spaces', [])
                 door_types = {'front_door', 'interior_door'}
-                actual_room_count = len([room for room in rooms if room.get('room_type', '').lower() not in door_types])
+                actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
                 if actual_room_count != rc:
                     continue
                 
@@ -90,7 +90,7 @@ class Evaluate:
         # Print Markdown table
         header_cells = ["Model"]
         for rc in self.room_counts:
-            header_cells.extend([f"{rc} rooms", f"{rc} error %"])
+            header_cells.extend([f"{rc} spaces", f"{rc} error %"])
         
         header = "| " + " | ".join(header_cells) + " |"
         divider = "|" + "|".join(["------------"] * len(header_cells)) + "|"

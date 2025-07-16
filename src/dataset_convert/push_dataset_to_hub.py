@@ -31,9 +31,11 @@ import json
 # login(token=os.environ.get("HF_TOKEN_WRITE"))
 # api = HfApi()
 # api.create_repo(repo_id="ludolara/rplan_8", repo_type="dataset", private=False, exist_ok=True)
-rplan = load_from_disk("../datasets/rplan_8")
+rplan = load_from_disk("datasets/rplan_8")
 print(rplan)
-print(rplan["train"][0])
+# print(rplan["train"][0])
+print(rplan["test"][0])
+print(rplan["test"][1])
 # # rplan = rplan.map(lambda sample: {"input": create_input(sample)})
 # rplan.push_to_hub("ludolara/rplan_8")
 
