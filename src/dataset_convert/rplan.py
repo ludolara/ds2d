@@ -146,7 +146,7 @@ class RPLANConverter:
             "total_area": round(total_area, self.round_value),
             "input_graph": json.dumps(input_graph),
             "spaces": spaces,
-            "prompt": str(input_data)
+            "prompt": json.dumps(input_data)
         }
 
     def create_dataset(self, raw: List[Dict[str, Any]]) -> DatasetDict:
@@ -185,7 +185,7 @@ class RPLANConverter:
         return self.create_dataset(raw)
 
 if __name__ == "__main__":
-    room_number = 8
+    room_number = 5
     converter = RPLANConverter(room_number=room_number)
     ds = converter("datasets/rplan_json")
     ds.save_to_disk(f"datasets/rplan_{room_number}")

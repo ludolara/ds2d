@@ -82,14 +82,6 @@ class FloorplanGenerator:
                 print("Invalid test_range format. Expected format: 'start,end' (e.g., '1,101').")
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
-
-    # def _build_prompt(self, sample):
-    #     prompt = (
-    #         f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
-    #         f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-    #         f"{sample.get("prompt", {})}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-    #     )
-    #     return prompt
     
     def _select_least(self, candidates, input_prompt):
         """
@@ -130,7 +122,6 @@ class FloorplanGenerator:
                 input_prompt = ast.literal_eval(sample.get("prompt", "{}"))
                 input_prompt = input_prompt["input"]
                 if self.use_sampling:
-                    # output_json = self._select_least_overlap(outputs[idx].outputs, create_input(sample, is_str=False))
                     output_json = self._select_least(outputs[idx].outputs, input_prompt)
                     output_json = extract_output_json(output_json.text)
                 else:
@@ -140,8 +131,12 @@ class FloorplanGenerator:
                 sample_dir = os.path.join(self.output_dir, str(i + idx + self.test_range_start))
                 os.makedirs(sample_dir, exist_ok=True)
 
+                ground_truth_dir = os.path.join(sample_dir, "analysis")
+                os.makedirs(ground_truth_dir, exist_ok=True)
+                
                 with open(os.path.join(sample_dir, "prompt.json"), "w", encoding="utf-8") as f:
                     json.dump(input_prompt, f, indent=4)
+                with open(os.path.join(ground_truth_dir, "sample.json"), "w", encoding="utf-8") as f:
+                    json.dump(sample, f, indent=4)
                 with open(os.path.join(sample_dir, f"0.json"), "w", encoding="utf-8") as f:
                     json.dump(output_json, f, indent=4)
-

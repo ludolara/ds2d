@@ -1,4 +1,4 @@
-# import json
+import json
 from src.utils.constants import SYSTEM_PROMPT
 
 # def create_input(sample, is_str=True):
@@ -35,12 +35,12 @@ def create_output(sample):
             for room in sample.get("spaces", [])
         ],
     }
-    return str({"output": output})
+    return json.dumps({"output": output})
 
 def build_prompt(sample):
     prompt = (
         f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
         f"{SYSTEM_PROMPT}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-        f"{sample.get('prompt', '')}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+        f"{sample.get('prompt', '{}')}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
     )
     return prompt
