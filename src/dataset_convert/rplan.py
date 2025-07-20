@@ -185,7 +185,7 @@ class RPLANConverter:
         return self.create_dataset(raw)
 
 if __name__ == "__main__":
-    room_number = 5
+    room_number = 8
     converter = RPLANConverter(room_number=room_number)
     ds = converter("datasets/rplan_json")
     ds.save_to_disk(f"datasets/rplan_{room_number}")

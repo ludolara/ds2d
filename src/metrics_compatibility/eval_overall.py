@@ -51,7 +51,7 @@ class Evaluate:
                 if not is_valid_json(output):
                     continue
 
-                input_graph = RPLANGraph.from_ds2d(output)
+                # input_graph = RPLANGraph.from_ds2d(output)
                 
                 spaces = output.get('spaces', [])
                 door_types = {'front_door', 'interior_door'}
@@ -186,15 +186,3 @@ class Evaluate:
         print(row)
 
         return stats, all_valid_indices
-
-
-# if __name__ == "__main__":
-#     ev = Evaluate(folder_path="results/")
-#     stats, valid_indices = ev.evaluate()
-    
-#     # Print valid indices information
-#     print("\nValid JSON indices by room count:")
-#     for rc in ev.room_counts:
-#         if rc in valid_indices:
-#             print(f"{rc} spaces: {len(valid_indices[rc])} valid instances")
-#             print(f"  Indices: {sorted(valid_indices[rc])}")

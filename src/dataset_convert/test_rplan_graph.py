@@ -7,7 +7,7 @@ def sample_ds2d_data():
     """Fixture providing sample DS2D data for testing"""
     return {
         "room_count": 7,
-        "rooms": [
+        "spaces": [
             {
                 "id": "bedroom|0",
                 "room_type": "bedroom",
@@ -173,9 +173,9 @@ def sample_ds2d_data():
 
 @pytest.fixture
 def complex_ds2d_data():
-    """Fixture providing complex DS2D data with 8 rooms for connectivity testing"""
+    """Fixture providing complex DS2D data with 8 spaces for connectivity testing"""
     return {
-        "rooms": [
+        "spaces": [
             {
                 "area": 2.2,
                 "floor_polygon": [
@@ -421,13 +421,12 @@ def complex_ds2d_data():
         ]
     }
 
-
 @pytest.fixture
 def generated_ds2d_data():
-    """Fixture providing generated DS2D data with disconnected rooms for testing"""
+    """Fixture providing generated DS2D data with disconnected spaces for testing"""
     return {
         "room_count": 7,
-        "rooms": [
+        "spaces": [
             {
                 "id": "bedroom|0",
                 "room_type": "bedroom",
@@ -595,7 +594,7 @@ def generated_ds2d_data():
 def double_connection_balcony_ds2d_data():
     """8-room floorplan with balcony having double connections to bedroom and study room"""
     return {
-        "rooms": [
+        "spaces": [
             {
                 "area": 8.5,
                 "floor_polygon": [
@@ -846,7 +845,7 @@ def containment_issue_ds2d_data():
     """8-room floorplan with bathroom contained inside bedroom (invalid case)"""
     return {
         "room_count": 8,
-        "rooms": [
+        "spaces": [
             {
                 "id": "kitchen",
                 "room_type": "kitchen",
@@ -1055,7 +1054,7 @@ class TestConnectivity:
         # Check if graph is connected (all nodes reachable from any node)
         is_connected = nx.is_connected(graph.graph)
         
-        # The floorplan may not be fully connected due to isolated rooms
+        # The floorplan may not be fully connected due to isolated spaces
         # Just verify the structure is reasonable
         if is_connected:
             print("Graph is fully connected")
@@ -1064,9 +1063,9 @@ class TestConnectivity:
             components = list(nx.connected_components(graph.graph))
             print(f"Graph has {len(components)} connected components")
             
-            # Largest component should contain most rooms
+            # Largest component should contain most spaces
             largest_component_size = max(len(c) for c in components)
-            assert largest_component_size >= 5, f"Largest component has only {largest_component_size} rooms"
+            assert largest_component_size >= 5, f"Largest component has only {largest_component_size} spaces"
 
     def test_complex_floorplan_connectivity(self, complex_ds2d_data):
         """Test connectivity of complex 8-room floorplan with expected adjacency"""
@@ -1097,7 +1096,7 @@ class TestConnectivity:
             'bathroom|1': ['bedroom|1']
         }
         
-        # Check that all expected rooms are present
+        # Check that all expected spaces are present
         for room in expected_adjacency:
             assert room in labeled_adj, f"Room {room} not found in graph"
         
@@ -1114,20 +1113,20 @@ class TestConnectivity:
         assert living_room_connections == 5, f"Living room should have 5 connections, got {living_room_connections}"
 
     def test_generated_floorplan_connectivity(self, generated_ds2d_data):
-        """Test connectivity of generated floorplan with expected disconnected rooms"""
+        """Test connectivity of generated floorplan with expected disconnected spaces"""
         graph = RPLANGraph.from_ds2d(generated_ds2d_data)
         
         # Should have 7 room nodes (excluding doors)
         assert len(graph.graph.nodes()) == 7
         
-        # This floorplan has disconnected rooms, so not fully connected
+        # This floorplan has disconnected spaces, so not fully connected
         is_connected = nx.is_connected(graph.graph)
-        assert not is_connected, "Generated floorplan should NOT be fully connected (has isolated rooms)"
+        assert not is_connected, "Generated floorplan should NOT be fully connected (has isolated spaces)"
         
         # Convert to labeled adjacency to check expected connections
         labeled_adj = graph.to_labeled_adjacency()
         
-        # Expected connectivity - many rooms are isolated (front door excluded)
+        # Expected connectivity - many spaces are isolated (front door excluded)
         expected_adjacency = {
             'bedroom|0': [],
             'balcony|0': ['living_room'],
@@ -1138,7 +1137,7 @@ class TestConnectivity:
             'living_room': ['balcony|0', 'bathroom', 'kitchen']
         }
         
-        # Check that all expected rooms are present
+        # Check that all expected spaces are present
         for room in expected_adjacency:
             assert room in labeled_adj, f"Room {room} not found in graph"
         
@@ -1150,7 +1149,7 @@ class TestConnectivity:
             assert actual_neighbors == expected_neighbors_set, \
                 f"Room {room}: Expected {expected_neighbors_set}, got {actual_neighbors}"
         
-        # Verify that isolated rooms have no connections
+        # Verify that isolated spaces have no connections
         isolated_rooms = ['bedroom|0', 'bedroom|1', 'balcony|1']
         for room in isolated_rooms:
             connections = labeled_adj.get(room, [])
@@ -1166,7 +1165,7 @@ class TestConnectivity:
         
         # Find the largest component (should contain living_room)
         largest_component = max(components, key=len)
-        assert len(largest_component) == 4, f"Largest component should have 4 rooms, got {len(largest_component)}"
+        assert len(largest_component) == 4, f"Largest component should have 4 spaces, got {len(largest_component)}"
 
     def test_double_connection_balcony_connectivity(self, double_connection_balcony_ds2d_data):
         """Test connectivity of 8-room floorplan with balcony having double connections"""
@@ -1190,7 +1189,7 @@ class TestConnectivity:
             'study_room': ['balcony|0', 'living_room']
         }
         
-        # Check that all expected rooms are present
+        # Check that all expected spaces are present
         for room in expected_adjacency:
             assert room in labeled_adj, f"Room {room} not found in graph"
         
@@ -1216,7 +1215,7 @@ class TestConnectivity:
         assert total_edges == expected_edges, f"Expected {expected_edges} edges, got {total_edges}"
 
     def test_containment_issue_connectivity(self, containment_issue_ds2d_data):
-        """Test that rooms contained within other rooms do not create invalid connections"""
+        """Test that spaces contained within other spaces do not create invalid connections"""
         graph = RPLANGraph.from_ds2d(containment_issue_ds2d_data)
         
         # Should have 8 room nodes (excluding doors)
@@ -1237,7 +1236,7 @@ class TestConnectivity:
             'living_room': ['kitchen', 'balcony', 'bedroom|0', 'bedroom|1']
         }
         
-        # Check that all expected rooms are present
+        # Check that all expected spaces are present
         for room in expected_adjacency:
             assert room in labeled_adj, f"Room {room} not found in graph"
         
@@ -1266,11 +1265,11 @@ class TestConnectivity:
         assert total_edges == expected_edges, f"Expected {expected_edges} edges, got {total_edges}"
 
     def test_front_door_exclusion(self):
-        """Test that front doors do not create connections between rooms"""
-        # Test data with a front door between two rooms
+        """Test that front doors do not create connections between spaces"""
+        # Test data with a front door between two spaces
         test_data = {
             "room_count": 3,
-            "rooms": [
+            "spaces": [
                 {
                     "id": "room_a",
                     "room_type": "living_room",
@@ -1313,13 +1312,12 @@ class TestConnectivity:
         assert len(graph.graph.nodes()) == 2
         
         # Should have NO edges (front door excluded)
-        assert len(graph.graph.edges()) == 0, "Front door should not create connections between rooms"
+        assert len(graph.graph.edges()) == 0, "Front door should not create connections between spaces"
         
-        # Verify rooms are not connected
+        # Verify spaces are not connected
         labeled_adj = graph.to_labeled_adjacency()
         assert labeled_adj['living_room'] == []
         assert labeled_adj['kitchen'] == []
-
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"]) 

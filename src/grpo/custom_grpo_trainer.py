@@ -41,7 +41,7 @@ class BestRewardCallback(TrainerCallback):
                 is_best = False
                 if self.best_reward is None or reward > self.best_reward:
                     is_best = True
-                    old_best = self.best_reward
+                    # old_best = self.best_reward
                     self.best_reward = reward
                     
                     # Reset early stopping counter on improvement
@@ -50,20 +50,20 @@ class BestRewardCallback(TrainerCallback):
                     # Trigger model save
                     control.should_save = True
                     
-                    if old_best is None:
-                        print(f"🎯 First evaluation - setting baseline: {reward}")
-                    else:
-                        print(f"🌟 NEW BEST! {old_best:.6f} → {reward:.6f} - SAVING MODEL!")
-                        print(f"🔄 Early stopping counter reset to 0")
+                    # if old_best is None:
+                    #     print(f"🎯 First evaluation - setting baseline: {reward}")
+                    # else:
+                    #     print(f"🌟 NEW BEST! {old_best:.6f} → {reward:.6f} - SAVING MODEL!")
+                    #     print(f"🔄 Early stopping counter reset to 0")
                 else:
                     # No improvement - increment early stopping counter
                     self.early_stopping_patience_counter += 1
-                    print(f"🏆 Current best remains: {self.best_reward:.6f} (current: {reward:.6f})")
-                    print(f"⏳ No improvement for {self.early_stopping_patience_counter}/{self.early_stopping_patience} evaluations")
+                    # print(f"🏆 Current best remains: {self.best_reward:.6f} (current: {reward:.6f})")
+                    # print(f"⏳ No improvement for {self.early_stopping_patience_counter}/{self.early_stopping_patience} evaluations")
                     
                     # Check for early stopping
                     if self.early_stopping_patience_counter >= self.early_stopping_patience:
-                        print(f"🛑 EARLY STOPPING TRIGGERED! No improvement for {self.early_stopping_patience} evaluations")
+                        # print(f"🛑 EARLY STOPPING TRIGGERED! No improvement for {self.early_stopping_patience} evaluations")
                         control.should_training_stop = True
                 
                 # Also update trainer's state for consistency

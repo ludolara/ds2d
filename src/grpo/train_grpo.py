@@ -19,8 +19,8 @@ def main():
     parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
     parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
-    # parser.add_argument("--eval_sample_size", type=int, default=400, help="Number of examples to use for evaluation")
-    parser.add_argument("--eval_sample_size", type=int, default=20, help="Number of examples to use for evaluation")
+    parser.add_argument("--eval_sample_size", type=int, default=200, help="Number of examples to use for evaluation")
+    # parser.add_argument("--eval_sample_size", type=int, default=20, help="Number of examples to use for evaluation")
     parser.add_argument("--no_eval", action="store_true", help="Disable evaluation during training")
     parser.add_argument("--early_stopping_patience", type=int, default=3, help="Early stopping patience")
     
@@ -50,13 +50,13 @@ def main():
         bf16=True,
         gradient_checkpointing=True,
 
-        logging_steps=1,
+        # logging_steps=1,
         ## save_steps=4,
-        eval_steps=4 if do_eval else None, 
+        # eval_steps=4 if do_eval else None, 
         
-        # logging_steps=50,
-        ## save_steps=100,
-        # eval_steps=100 if do_eval else None,
+        logging_steps=50,
+        # save_steps=100,
+        eval_steps=100 if do_eval else None,
         
         report_to="wandb",
         use_vllm=True,
@@ -68,11 +68,9 @@ def main():
         log_level="info",
         warmup_steps=100,
         
-        save_strategy="no",  # Disabled - callback controls saving
+        save_strategy="no",  # BestRewardCallback controls saving
         save_total_limit=2,
-        save_only_model=True,
-        ## metric_for_best_model='eval_loss',
-        ## greater_is_better=False,
+        save_only_model=True
     )
 
     reward_calculator = RewardCalculator()
