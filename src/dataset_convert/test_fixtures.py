@@ -1116,3 +1116,147 @@ def front_door_exclusion_data():
             }
         ]
     }
+
+@pytest.fixture
+def floating_interior_door_data():
+    """Fixture with floating interior doors for testing penalty functionality"""
+    return {
+        "room_count": 5,
+        "spaces": [
+            {
+                "id": "kitchen",
+                "room_type": "kitchen",
+                "area": 11.0,
+                "floor_polygon": [
+                    {"x": 8.8, "y": 3.2},
+                    {"x": 5.6, "y": 3.2},
+                    {"x": 5.6, "y": 6.6},
+                    {"x": 8.8, "y": 6.6}
+                ]
+            },
+            {
+                "id": "bathroom",
+                "room_type": "bathroom",
+                "area": 2.7,
+                "floor_polygon": [
+                    {"x": 7.4, "y": 8.4},
+                    {"x": 7.4, "y": 6.9},
+                    {"x": 5.6, "y": 6.9},
+                    {"x": 5.6, "y": 8.4}
+                ]
+            },
+            {
+                "id": "bedroom",
+                "room_type": "bedroom",
+                "area": 12.1,
+                "floor_polygon": [
+                    {"x": 5.6, "y": 12.4},
+                    {"x": 8.8, "y": 12.4},
+                    {"x": 8.8, "y": 8.7},
+                    {"x": 5.6, "y": 8.7}
+                ]
+            },
+            {
+                "id": "bedroom|0",
+                "room_type": "bedroom",
+                "area": 6.1,
+                "floor_polygon": [
+                    {"x": 13.4, "y": 14.8},
+                    {"x": 13.4, "y": 13.4},
+                    {"x": 9.1, "y": 13.4},
+                    {"x": 9.1, "y": 14.8}
+                ]
+            },
+            {
+                "id": "living_room",
+                "room_type": "living_room",
+                "area": 35.9,
+                "floor_polygon": [
+                    {"x": 13.4, "y": 13.1},
+                    {"x": 13.4, "y": 6.9},
+                    {"x": 7.7, "y": 6.9},
+                    {"x": 7.7, "y": 8.4},
+                    {"x": 9.1, "y": 8.4},
+                    {"x": 9.1, "y": 13.1}
+                ]
+            },
+            {
+                "id": "interior_door|0",
+                "room_type": "interior_door",
+                "area": 0.0,
+                "floor_polygon": [
+                    {"x": 7.5, "y": 7.4},
+                    {"x": 7.6, "y": 7.4},
+                    {"x": 7.6, "y": 7.1},
+                    {"x": 7.5, "y": 7.1}
+                ]
+            },
+            {
+                "id": "interior_door|1",
+                "room_type": "interior_door",
+                "area": 0.0,
+                "floor_polygon": [
+                    {"x": 8.6, "y": 6.7},
+                    {"x": 8.2, "y": 6.7},
+                    {"x": 8.2, "y": 6.8},
+                    {"x": 8.6, "y": 6.8}
+                ]
+            },
+            {
+                "id": "interior_door|2",
+                "room_type": "interior_door",
+                "area": 0.0,
+                "floor_polygon": [
+                    {"x": 7.9, "y": 8.5},
+                    {"x": 7.9, "y": 8.6},
+                    {"x": 8.3, "y": 8.6},
+                    {"x": 8.3, "y": 8.5}
+                ]
+            },
+            {
+                "id": "interior_door|3",
+                "room_type": "interior_door",
+                "area": 0.2,
+                "floor_polygon": [
+                    {"x": 10.2, "y": 13.3},
+                    {"x": 11.7, "y": 13.3},
+                    {"x": 11.7, "y": 13.1},
+                    {"x": 10.2, "y": 13.1}
+                ]
+            },
+            {
+                "id": "interior_door|4",
+                "room_type": "interior_door",
+                "area": 0.2,
+                "floor_polygon": [
+                    {"x": 9.6, "y": 6.7},
+                    {"x": 9.6, "y": 6.8},
+                    {"x": 10.8, "y": 6.8},
+                    {"x": 10.8, "y": 6.7}
+                ]
+            },
+            {
+                "id": "front_door",
+                "room_type": "front_door",
+                "area": 0.2,
+                "floor_polygon": [
+                    {"x": 13.5, "y": 7.8},
+                    {"x": 13.5, "y": 9.4},
+                    {"x": 13.6, "y": 9.4},
+                    {"x": 13.6, "y": 7.8}
+                ]
+            }
+        ]
+    }
+
+@pytest.fixture
+def expected_graph_without_floating_doors():
+    """Expected graph structure without floating interior doors"""
+    return {
+        "bedroom|0": ["living_room"],
+        "bedroom|1": ["living_room"],
+        "kitchen": ["living_room"],
+        "living_room": ["bedroom|0", "bedroom|1", "kitchen", "bathroom", "front_door"],
+        "bathroom": ["living_room"],
+        "front_door": ["living_room"]
+    }

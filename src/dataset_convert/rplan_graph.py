@@ -62,7 +62,7 @@ class RPLANGraph:
 
     @classmethod
     def from_ds2d(cls, data: Dict[str,Any], gap_threshold: float = 0.2, boundary_tolerance: float = 0.3, overlap_threshold: float = 0.3) -> "RPLANGraph":
-        inst = cls({})
+        inst = cls(data)  # Store the original data
         room_polys = {}
         door_polys = {}
         name_to_int = {v:k for k,v in ROOM_CLASS.items()}
@@ -260,6 +260,69 @@ class RPLANGraph:
     def _count_front_doors(self, graph: nx.Graph) -> int:
         """Helper method to count front door nodes"""
         return sum(1 for n in graph.nodes() if graph.nodes[n]['room_type'] == 15)
+    
+    def _count_floating_interior_doors_from_ds2d(self, data: Dict[str, Any]) -> int:
+        """Helper method to count floating interior doors from DS2D data"""
+        if not isinstance(data, dict) or "spaces" not in data:
+            return 0
+            
+        spaces = data["spaces"]
+        if not isinstance(spaces, list):
+            return 0
+        
+        floating_count = 0
+        
+        # Find all interior doors
+        door_polys = {}
+        room_polys = {}
+        
+        for idx, item in enumerate(spaces):
+            if not isinstance(item, dict) or "floor_polygon" not in item or "room_type" not in item:
+                continue
+                
+            floor_polygon = item["floor_polygon"]
+            if not isinstance(floor_polygon, list):
+                continue
+            
+            try:
+                coords = []
+                for pt in floor_polygon:
+                    if not isinstance(pt, dict) or "x" not in pt or "y" not in pt:
+                        break
+                    coords.append((pt["x"], pt["y"]))
+                
+                if len(coords) != len(floor_polygon):
+                    continue
+                    
+                from shapely.geometry import Polygon
+                poly = Polygon(coords)
+                
+                if item["room_type"] == "interior_door":
+                    door_polys[idx] = poly
+                else:
+                    room_polys[idx] = poly
+            except Exception:
+                continue
+        
+        # Check each door to see if it's floating
+        for door_idx, door_poly in door_polys.items():
+            # Count how many rooms this door touches
+            touching_rooms = 0
+            for room_idx, room_poly in room_polys.items():
+                if door_poly.buffer(0.2).intersects(room_poly):
+                    touching_rooms += 1
+            
+            # If door touches 0 or 1 room, it's floating
+            if touching_rooms <= 1:
+                floating_count += 1
+        
+        return floating_count
+
+    def _get_floating_interior_door_count(self, obj) -> int:
+        floorplan = getattr(obj, 'floorplan', None)
+        if isinstance(floorplan, dict) and "spaces" in floorplan:
+            return self._count_floating_interior_doors_from_ds2d(floorplan)
+        return 0
 
     def compatibility_score(self, other: "RPLANGraph") -> int:
         c1 = self._multiset_edges(self.graph)
@@ -272,7 +335,12 @@ class RPLANGraph:
         fd2 = self._count_front_doors(other.graph)
         front_door_mistakes = abs(fd1 - fd2)
         
-        return edge_mistakes + front_door_mistakes
+        # Add floating interior door penalties
+        floating1 = self._get_floating_interior_door_count(self)
+        floating2 = self._get_floating_interior_door_count(other)
+        floating_penalty = floating1 + floating2  # Penalize each floating door by 1
+        
+        return edge_mistakes + front_door_mistakes + floating_penalty
     
     def compatibility_score_scaled(self, other: "RPLANGraph") -> float:
         c1 = self._multiset_edges(self.graph)
@@ -288,8 +356,13 @@ class RPLANGraph:
         front_door_mismatches = abs(fd1 - fd2)
         front_door_total = max(fd1, fd2)
         
-        total_mismatches = edge_mismatches + front_door_mismatches
-        total_elements = edge_total + front_door_total
+        # Add floating interior door penalties
+        floating1 = self._get_floating_interior_door_count(self)
+        floating2 = self._get_floating_interior_door_count(other)
+        floating_penalty = floating1 + floating2  # Penalize each floating door by 1
+        
+        total_mismatches = edge_mismatches + front_door_mismatches + floating_penalty
+        total_elements = edge_total + front_door_total + floating1 + floating2
         
         if total_elements == 0:
             return 1.0

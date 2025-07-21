@@ -318,6 +318,49 @@ class TestCompatibility:
         assert len(living_room_component) == 5, f"Living room component should have 5 rooms, got {len(living_room_component)}"
         assert len(kitchen_component) == 1, f"Kitchen component should have 1 room, got {len(kitchen_component)}"
 
+    def test_floating_interior_door_penalty(self, floating_interior_door_data, expected_graph_without_floating_doors):
+        """Test that floating interior doors are properly penalized in compatibility scores"""
+        # Create graph from DS2D data (may have floating doors)
+        graph_with_floating = RPLANGraph.from_ds2d(floating_interior_door_data)
+        
+        # Create expected graph without floating doors
+        graph_without_floating = RPLANGraph.from_labeled_adjacency(expected_graph_without_floating_doors)
+        
+        # Count floating doors in both graphs
+        floating1 = graph_with_floating._count_floating_interior_doors_from_ds2d(floating_interior_door_data)
+        floating2 = 0  # The expected graph never has floating doors
+        
+        print(f"Floating doors in DS2D graph: {floating1}")
+        print(f"Floating doors in expected graph: {floating2}")
+        
+        # Test compatibility scores
+        score = graph_with_floating.compatibility_score(graph_without_floating)
+        scaled_score = graph_with_floating.compatibility_score_scaled(graph_without_floating)
+        
+        print(f"Compatibility score: {score}")
+        print(f"Scaled compatibility score: {scaled_score}")
+        
+        # Verify that floating doors are penalized
+        expected_penalty = floating1 + floating2
+        print(f"Expected floating door penalty: {expected_penalty}")
+        
+        # The score should include the floating door penalty
+        # If there are floating doors, the score should be > 0
+        if expected_penalty > 0:
+            assert score > 0, f"Score should be > 0 when there are floating doors (penalty: {expected_penalty})"
+            assert scaled_score < 1.0, f"Scaled score should be < 1.0 when there are floating doors"
+        else:
+            assert score == 0, f"Score should be 0 when there are no floating doors"
+            assert scaled_score == 1.0, f"Scaled score should be 1.0 when there are no floating doors"
+        
+        # Test that the penalty is correctly calculated
+        # Get the base score without floating door penalty
+        base_score = score - expected_penalty
+        print(f"Base score (without floating door penalty): {base_score}")
+        
+        # Verify that the floating door penalty is additive
+        assert score >= expected_penalty, f"Total score should be at least the floating door penalty"
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"]) 
     
