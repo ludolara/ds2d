@@ -125,6 +125,9 @@ class RPLANGraph:
             rt_int = name_to_int.get(data["spaces"][idx]["room_type"], name_to_int["unknown"])
             G.add_node(idx, room_type=rt_int)
         
+        # Track door connections to detect multiple doors between same rooms
+        door_connections = defaultdict(list)
+        
         for door_idx, door_poly in door_polys.items():
             door_room_type = data["spaces"][door_idx]["room_type"]
             if door_room_type == "front_door":
@@ -166,6 +169,14 @@ class RPLANGraph:
                 if room_a_poly.contains(room_b_poly) or room_b_poly.contains(room_a_poly):
                     continue  # Skip if one room is completely inside the other
                 
+                # Track this door connection
+                room_pair = tuple(sorted([a, b]))
+                door_connections[room_pair].append(door_idx)
+        
+        # Only add connections for room pairs that have exactly one door
+        for room_pair, door_list in door_connections.items():
+            if len(door_list) == 1:  # Only connect if exactly one door
+                a, b = room_pair
                 G.add_edge(a, b)
         
         inst.graph = G

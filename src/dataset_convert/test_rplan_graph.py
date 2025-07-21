@@ -175,22 +175,22 @@ def sample_ds2d_data():
 def complex_ds2d_data():
     """Fixture providing complex DS2D data with 8 spaces for connectivity testing"""
     return {
+        "room_count": 8,
         "spaces": [
             {
+                "id": "storage",
+                "room_type": "storage",
                 "area": 2.2,
                 "floor_polygon": [
                     {"x": 4.3, "y": 14.3},
                     {"x": 5.6, "y": 14.3},
                     {"x": 5.6, "y": 12.7},
                     {"x": 4.3, "y": 12.7}
-                ],
-                "height": 1.6,
-                "id": "storage",
-                "is_rectangular": 1,
-                "room_type": "storage",
-                "width": 1.3
+                ]
             },
             {
+                "id": "living_room",
+                "room_type": "living_room",
                 "area": 35.8,
                 "floor_polygon": [
                     {"x": 8.6, "y": 14.3},
@@ -203,14 +203,11 @@ def complex_ds2d_data():
                     {"x": 7.4, "y": 6.6},
                     {"x": 7.4, "y": 8.9},
                     {"x": 8.6, "y": 8.9}
-                ],
-                "height": 7.7,
-                "id": "living_room",
-                "is_rectangular": 0,
-                "room_type": "living_room",
-                "width": 7
+                ]
             },
             {
+                "id": "bedroom|0",
+                "room_type": "bedroom",
                 "area": 7.1,
                 "floor_polygon": [
                     {"x": 8.3, "y": 9.1},
@@ -219,42 +216,33 @@ def complex_ds2d_data():
                     {"x": 5.9, "y": 9.6},
                     {"x": 5.9, "y": 12.4},
                     {"x": 8.3, "y": 12.4}
-                ],
-                "height": 3.2,
-                "id": "bedroom|0",
-                "is_rectangular": 0,
-                "room_type": "bedroom",
-                "width": 2.4
+                ]
             },
             {
+                "id": "kitchen",
+                "room_type": "kitchen",
                 "area": 3.9,
                 "floor_polygon": [
                     {"x": 5.9, "y": 14.3},
                     {"x": 8.3, "y": 14.3},
                     {"x": 8.3, "y": 12.7},
                     {"x": 5.9, "y": 12.7}
-                ],
-                "height": 1.6,
-                "id": "kitchen",
-                "is_rectangular": 1,
-                "room_type": "kitchen",
-                "width": 2.4
+                ]
             },
             {
+                "id": "bathroom|0",
+                "room_type": "bathroom",
                 "area": 3.3,
                 "floor_polygon": [
                     {"x": 5, "y": 9.3},
                     {"x": 7.1, "y": 9.3},
                     {"x": 7.1, "y": 7.7},
                     {"x": 5, "y": 7.7}
-                ],
-                "height": 1.5,
-                "id": "bathroom|0",
-                "is_rectangular": 1,
-                "room_type": "bathroom",
-                "width": 2.1
+                ]
             },
             {
+                "id": "bedroom|1",
+                "room_type": "bedroom",
                 "area": 13.3,
                 "floor_polygon": [
                     {"x": 8.6, "y": 7.5},
@@ -265,14 +253,11 @@ def complex_ds2d_data():
                     {"x": 10.1, "y": 4.4},
                     {"x": 10.1, "y": 6.6},
                     {"x": 8.6, "y": 6.6}
-                ],
-                "height": 3,
-                "id": "bedroom|1",
-                "is_rectangular": 0,
-                "room_type": "bedroom",
-                "width": 5.8
+                ]
             },
             {
+                "id": "bedroom|2",
+                "room_type": "bedroom",
                 "area": 10.7,
                 "floor_polygon": [
                     {"x": 7.7, "y": 4.4},
@@ -285,138 +270,106 @@ def complex_ds2d_data():
                     {"x": 7.1, "y": 7.5},
                     {"x": 7.1, "y": 6.3},
                     {"x": 7.7, "y": 6.3}
-                ],
-                "height": 3.7,
-                "id": "bedroom|2",
-                "is_rectangular": 0,
-                "room_type": "bedroom",
-                "width": 4.1
+                ]
             },
             {
+                "id": "bathroom|1",
+                "room_type": "bathroom",
                 "area": 3.5,
                 "floor_polygon": [
                     {"x": 8, "y": 4.4},
                     {"x": 8, "y": 6.3},
                     {"x": 9.8, "y": 6.3},
                     {"x": 9.8, "y": 4.4}
-                ],
-                "height": 1.9,
-                "id": "bathroom|1",
-                "is_rectangular": 1,
-                "room_type": "bathroom",
-                "width": 1.8
+                ]
             },
             {
+                "id": "interior_door|0",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 7.6, "y": 9.1},
                     {"x": 8.4, "y": 9.1},
                     {"x": 8.4, "y": 8.9},
                     {"x": 7.6, "y": 8.9}
-                ],
-                "height": 0.1,
-                "id": "interior_door|0",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.8
+                ]
             },
             {
+                "id": "interior_door|1",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 8.5, "y": 12.9},
                     {"x": 8.4, "y": 12.9},
                     {"x": 8.4, "y": 13.5},
                     {"x": 8.5, "y": 13.5}
-                ],
-                "height": 0.6,
-                "id": "interior_door|1",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|2",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 5.7, "y": 12.9},
                     {"x": 5.7, "y": 13.4},
                     {"x": 5.8, "y": 13.4},
                     {"x": 5.8, "y": 12.9}
-                ],
-                "height": 0.6,
-                "id": "interior_door|2",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|3",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 7.2, "y": 7.9},
                     {"x": 7.2, "y": 8.5},
                     {"x": 7.3, "y": 8.5},
                     {"x": 7.3, "y": 7.9}
-                ],
-                "height": 0.6,
-                "id": "interior_door|3",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|4",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 8.4, "y": 7.5},
                     {"x": 8.5, "y": 7.5},
                     {"x": 8.5, "y": 6.8},
                     {"x": 8.4, "y": 6.8}
-                ],
-                "height": 0.7,
-                "id": "interior_door|4",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|5",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 7.3, "y": 6.5},
                     {"x": 7.2, "y": 6.5},
                     {"x": 7.2, "y": 7.3},
                     {"x": 7.3, "y": 7.3}
-                ],
-                "height": 0.8,
-                "id": "interior_door|5",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|6",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 9.9, "y": 6.4},
                     {"x": 9.1, "y": 6.4},
                     {"x": 9.1, "y": 6.5},
                     {"x": 9.9, "y": 6.5}
-                ],
-                "height": 0.1,
-                "id": "interior_door|6",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.8
+                ]
             },
             {
+                "id": "front_door",
+                "room_type": "front_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 12.5, "y": 14.3},
                     {"x": 11.7, "y": 14.3},
                     {"x": 11.7, "y": 14.5},
                     {"x": 12.5, "y": 14.5}
-                ],
-                "height": 0.1,
-                "id": "front_door",
-                "is_rectangular": 1,
-                "room_type": "front_door",
-                "width": 0.8
+                ]
             }
         ]
     }
@@ -594,50 +547,44 @@ def generated_ds2d_data():
 def double_connection_balcony_ds2d_data():
     """8-room floorplan with balcony having double connections to bedroom and study room"""
     return {
+        "room_count": 8,
         "spaces": [
             {
+                "id": "balcony|0",
+                "room_type": "balcony",
                 "area": 8.5,
                 "floor_polygon": [
                     {"x": 13.4, "y": 3},
                     {"x": 6.6, "y": 3},
                     {"x": 6.6, "y": 4.3},
                     {"x": 13.4, "y": 4.3}
-                ],
-                "height": 1.3,
-                "id": "balcony|0",
-                "is_rectangular": 1,
-                "room_type": "balcony",
-                "width": 6.8
+                ]
             },
             {
+                "id": "bedroom|0",
+                "room_type": "bedroom",
                 "area": 11.4,
                 "floor_polygon": [
                     {"x": 9.9, "y": 4.6},
                     {"x": 9.9, "y": 7.9},
                     {"x": 13.4, "y": 7.9},
                     {"x": 13.4, "y": 4.6}
-                ],
-                "height": 3.3,
-                "id": "bedroom|0",
-                "is_rectangular": 1,
-                "room_type": "bedroom",
-                "width": 3.4
+                ]
             },
             {
+                "id": "bathroom",
+                "room_type": "bathroom",
                 "area": 4.2,
                 "floor_polygon": [
                     {"x": 11.2, "y": 8.2},
                     {"x": 11.2, "y": 10.1},
                     {"x": 13.4, "y": 10.1},
                     {"x": 13.4, "y": 8.2}
-                ],
-                "height": 2,
-                "id": "bathroom",
-                "is_rectangular": 1,
-                "room_type": "bathroom",
-                "width": 2.1
+                ]
             },
             {
+                "id": "bedroom|1",
+                "room_type": "bedroom",
                 "area": 11.5,
                 "floor_polygon": [
                     {"x": 9.9, "y": 9.6},
@@ -646,28 +593,22 @@ def double_connection_balcony_ds2d_data():
                     {"x": 13.4, "y": 10.4},
                     {"x": 11, "y": 10.4},
                     {"x": 11, "y": 9.6}
-                ],
-                "height": 3.9,
-                "id": "bedroom|1",
-                "is_rectangular": 0,
-                "room_type": "bedroom",
-                "width": 3.4
+                ]
             },
             {
+                "id": "balcony|1",
+                "room_type": "balcony",
                 "area": 4.1,
                 "floor_polygon": [
                     {"x": 9.9, "y": 13.8},
                     {"x": 9.9, "y": 15},
                     {"x": 13.4, "y": 15},
                     {"x": 13.4, "y": 13.8}
-                ],
-                "height": 1.2,
-                "id": "balcony|1",
-                "is_rectangular": 1,
-                "room_type": "balcony",
-                "width": 3.4
+                ]
             },
             {
+                "id": "living_room",
+                "room_type": "living_room",
                 "area": 27.9,
                 "floor_polygon": [
                     {"x": 11, "y": 9.3},
@@ -676,166 +617,128 @@ def double_connection_balcony_ds2d_data():
                     {"x": 5.4, "y": 14.4},
                     {"x": 9.6, "y": 14.4},
                     {"x": 9.6, "y": 9.3}
-                ],
-                "height": 6.3,
-                "id": "living_room",
-                "is_rectangular": 0,
-                "room_type": "living_room",
-                "width": 5.6
+                ]
             },
             {
+                "id": "kitchen",
+                "room_type": "kitchen",
                 "area": 5.6,
                 "floor_polygon": [
                     {"x": 4.6, "y": 4.6},
                     {"x": 4.6, "y": 7.9},
                     {"x": 6.3, "y": 7.9},
                     {"x": 6.3, "y": 4.6}
-                ],
-                "height": 3.3,
-                "id": "kitchen",
-                "is_rectangular": 1,
-                "room_type": "kitchen",
-                "width": 1.7
+                ]
             },
             {
+                "id": "study_room",
+                "room_type": "study_room",
                 "area": 10,
                 "floor_polygon": [
                     {"x": 9.6, "y": 4.6},
                     {"x": 6.6, "y": 4.6},
                     {"x": 6.6, "y": 7.9},
                     {"x": 9.6, "y": 7.9}
-                ],
-                "height": 3.3,
-                "id": "study_room",
-                "is_rectangular": 1,
-                "room_type": "study_room",
-                "width": 3
+                ]
             },
             {
+                "id": "interior_door|0",
+                "room_type": "interior_door",
                 "area": 0.2,
                 "floor_polygon": [
                     {"x": 12.5, "y": 4.5},
                     {"x": 12.5, "y": 4.4},
                     {"x": 10.8, "y": 4.4},
                     {"x": 10.8, "y": 4.5}
-                ],
-                "height": 0.1,
-                "id": "interior_door|0",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 1.7
+                ]
             },
             {
+                "id": "interior_door|1",
+                "room_type": "interior_door",
                 "area": 0.2,
                 "floor_polygon": [
                     {"x": 12.5, "y": 13.7},
                     {"x": 12.5, "y": 13.6},
                     {"x": 10.8, "y": 13.6},
                     {"x": 10.8, "y": 13.7}
-                ],
-                "height": 0.1,
-                "id": "interior_door|1",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 1.7
+                ]
             },
             {
+                "id": "interior_door|2",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 10.1, "y": 7.9},
                     {"x": 10.1, "y": 8.1},
                     {"x": 10.8, "y": 8.1},
                     {"x": 10.8, "y": 7.9}
-                ],
-                "height": 0.1,
-                "id": "interior_door|2",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.7
+                ]
             },
             {
+                "id": "interior_door|3",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 11, "y": 9.1},
                     {"x": 11.2, "y": 9.1},
                     {"x": 11.2, "y": 8.4},
                     {"x": 11, "y": 8.4}
-                ],
-                "height": 0.7,
-                "id": "interior_door|3",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.1
+                ]
             },
             {
+                "id": "interior_door|4",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 10.8, "y": 9.4},
                     {"x": 9.8, "y": 9.4},
                     {"x": 9.8, "y": 9.5},
                     {"x": 10.8, "y": 9.5}
-                ],
-                "height": 0.1,
-                "id": "interior_door|4",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 1
+                ]
             },
             {
+                "id": "interior_door|5",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 6.2, "y": 7.9},
                     {"x": 5.3, "y": 7.9},
                     {"x": 5.3, "y": 8.1},
                     {"x": 6.2, "y": 8.1}
-                ],
-                "height": 0.1,
-                "id": "interior_door|5",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.8
+                ]
             },
             {
+                "id": "interior_door|6",
+                "room_type": "interior_door",
                 "area": 0.2,
                 "floor_polygon": [
                     {"x": 7.3, "y": 4.4},
                     {"x": 7.3, "y": 4.5},
                     {"x": 9, "y": 4.5},
                     {"x": 9, "y": 4.4}
-                ],
-                "height": 0.1,
-                "id": "interior_door|6",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 1.7
+                ]
             },
             {
+                "id": "interior_door|7",
+                "room_type": "interior_door",
                 "area": 0.1,
                 "floor_polygon": [
                     {"x": 9.5, "y": 8.1},
                     {"x": 9.5, "y": 7.9},
                     {"x": 8.6, "y": 7.9},
                     {"x": 8.6, "y": 8.1}
-                ],
-                "height": 0.1,
-                "id": "interior_door|7",
-                "is_rectangular": 1,
-                "room_type": "interior_door",
-                "width": 0.9
+                ]
             },
             {
+                "id": "front_door",
+                "room_type": "front_door",
                 "area": 0.2,
                 "floor_polygon": [
                     {"x": 5.3, "y": 9.2},
                     {"x": 5.2, "y": 9.2},
                     {"x": 5.2, "y": 10.3},
                     {"x": 5.3, "y": 10.3}
-                ],
-                "height": 1.1,
-                "id": "front_door",
-                "is_rectangular": 1,
-                "room_type": "front_door",
-                "width": 0.1
+                ]
             }
         ]
     }
@@ -1032,6 +935,144 @@ def containment_issue_ds2d_data():
                     {"x": 6.3, "y": 5.1},
                     {"x": 5.5, "y": 5.1},
                     {"x": 5.5, "y": 5.2}
+                ]
+            }
+        ]
+    }
+
+@pytest.fixture
+def multiple_doors_ds2d_data():
+    """Fixture with multiple doors connecting the same rooms (invalid case)"""
+    return {
+        "room_count": 5,
+        "spaces": [
+            {
+                "id": "bedroom",
+                "room_type": "bedroom",
+                "area": 19.9,
+                "floor_polygon": [
+                    {"x": 13.0, "y": 8.2},
+                    {"x": 13.0, "y": 3.7},
+                    {"x": 8.6, "y": 3.7},
+                    {"x": 8.6, "y": 8.2}
+                ]
+            },
+            {
+                "id": "balcony",
+                "room_type": "balcony",
+                "area": 5.3,
+                "floor_polygon": [
+                    {"x": 6.1, "y": 5.4},
+                    {"x": 6.1, "y": 7.9},
+                    {"x": 8.3, "y": 7.9},
+                    {"x": 8.3, "y": 5.4}
+                ]
+            },
+            {
+                "id": "bathroom",
+                "room_type": "bathroom",
+                "area": 6.2,
+                "floor_polygon": [
+                    {"x": 13.0, "y": 8.4},
+                    {"x": 10.1, "y": 8.4},
+                    {"x": 10.1, "y": 10.7},
+                    {"x": 13.0, "y": 10.7}
+                ]
+            },
+            {
+                "id": "kitchen",
+                "room_type": "kitchen",
+                "area": 7.8,
+                "floor_polygon": [
+                    {"x": 13.0, "y": 11.0},
+                    {"x": 10.1, "y": 11.0},
+                    {"x": 10.1, "y": 12.0},
+                    {"x": 11.0, "y": 12.0},
+                    {"x": 11.0, "y": 14.3},
+                    {"x": 13.0, "y": 14.3}
+                ]
+            },
+            {
+                "id": "living_room",
+                "room_type": "living_room",
+                "area": 18.0,
+                "floor_polygon": [
+                    {"x": 5.8, "y": 8.2},
+                    {"x": 5.8, "y": 8.2},
+                    {"x": 5.8, "y": 14.3},
+                    {"x": 10.8, "y": 14.3},
+                    {"x": 10.8, "y": 12.3},
+                    {"x": 9.8, "y": 12.3},
+                    {"x": 9.8, "y": 8.4},
+                    {"x": 8.3, "y": 8.4},
+                    {"x": 8.3, "y": 8.2},
+                    {"x": 5.8, "y": 8.2}
+                ]
+            },
+            {
+                "id": "interior_door|0",
+                "room_type": "interior_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 6.0, "y": 8.2},
+                    {"x": 6.8, "y": 8.2},
+                    {"x": 6.8, "y": 8.0},
+                    {"x": 6.0, "y": 8.0}
+                ]
+            },
+            {
+                "id": "interior_door|1",
+                "room_type": "interior_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 8.8, "y": 8.2},
+                    {"x": 8.8, "y": 8.4},
+                    {"x": 9.6, "y": 8.4},
+                    {"x": 9.6, "y": 8.2}
+                ]
+            },
+            {
+                "id": "interior_door|2",
+                "room_type": "interior_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 9.9, "y": 9.7},
+                    {"x": 10.1, "y": 9.7},
+                    {"x": 10.1, "y": 8.7},
+                    {"x": 9.9, "y": 8.7}
+                ]
+            },
+            {
+                "id": "interior_door|3",
+                "room_type": "interior_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 10.0, "y": 11.2},
+                    {"x": 9.8, "y": 11.2},
+                    {"x": 9.8, "y": 12.0},
+                    {"x": 10.0, "y": 12.0}
+                ]
+            },
+            {
+                "id": "interior_door|4",
+                "room_type": "interior_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 10.0, "y": 12.1},
+                    {"x": 10.0, "y": 12.2},
+                    {"x": 10.8, "y": 12.2},
+                    {"x": 10.8, "y": 12.1}
+                ]
+            },
+            {
+                "id": "front_door",
+                "room_type": "front_door",
+                "area": 0.1,
+                "floor_polygon": [
+                    {"x": 5.7, "y": 14.5},
+                    {"x": 6.7, "y": 14.5},
+                    {"x": 6.7, "y": 14.3},
+                    {"x": 5.7, "y": 14.3}
                 ]
             }
         ]
@@ -1318,6 +1359,78 @@ class TestConnectivity:
         labeled_adj = graph.to_labeled_adjacency()
         assert labeled_adj['living_room'] == []
         assert labeled_adj['kitchen'] == []
+
+    def test_single_door_connectivity(self, multiple_doors_ds2d_data):
+        """Test that rooms with multiple doors are not connected (invalid connections rejected)"""
+        graph = RPLANGraph.from_ds2d(multiple_doors_ds2d_data)
+        
+        # Should have 5 room nodes (excluding doors)
+        assert len(graph.graph.nodes()) == 5
+        
+        # Convert to labeled adjacency to check expected connections
+        labeled_adj = graph.to_labeled_adjacency()
+        
+        # Expected connectivity - rooms with multiple doors should NOT be connected
+        # The kitchen and living_room have multiple doors, so they should not be connected
+        expected_adjacency = {
+            'bedroom': ['living_room'],
+            'balcony': ['living_room'],
+            'bathroom': ['living_room'],
+            'kitchen': [],  # No connection due to multiple doors
+            'living_room': ['bedroom', 'balcony', 'bathroom']  # No kitchen due to multiple doors
+        }
+        
+        # Check that all expected spaces are present
+        for room in expected_adjacency:
+            assert room in labeled_adj, f"Room {room} not found in graph"
+        
+        # Check exact connectivity matches for each room
+        for room, expected_neighbors in expected_adjacency.items():
+            actual_neighbors = set(labeled_adj.get(room, []))
+            expected_neighbors_set = set(expected_neighbors)
+            
+            assert actual_neighbors == expected_neighbors_set, \
+                f"Room {room}: Expected {expected_neighbors_set}, got {actual_neighbors}"
+        
+        # Verify that kitchen has no connections (due to multiple doors)
+        kitchen_connections = labeled_adj.get('kitchen', [])
+        assert len(kitchen_connections) == 0, f"Kitchen should have no connections due to multiple doors, got: {kitchen_connections}"
+        
+        # Verify that living_room doesn't connect to kitchen (due to multiple doors)
+        living_room_connections = labeled_adj.get('living_room', [])
+        assert 'kitchen' not in living_room_connections, f"Living room should not connect to kitchen due to multiple doors"
+        
+        # Verify total number of edges matches expected (no connections for multiple doors)
+        total_edges = len(graph.graph.edges())
+        expected_edges = 3  # 3 unique connections: bedroom-living_room, balcony-living_room, bathroom-living_room
+        assert total_edges == expected_edges, f"Expected {expected_edges} edges, got {total_edges}"
+        
+        # Verify the graph is NOT fully connected (kitchen is isolated)
+        is_connected = nx.is_connected(graph.graph)
+        assert not is_connected, "Graph should NOT be fully connected (kitchen should be isolated due to multiple doors)"
+        
+        # Check connected components
+        components = list(nx.connected_components(graph.graph))
+        assert len(components) == 2, f"Should have 2 connected components, got {len(components)}"
+        
+        # One component should contain living_room and connected rooms, another should contain kitchen
+        living_room_component = None
+        kitchen_component = None
+        for component in components:
+            room_names = []
+            for idx in component:
+                room_type = graph.graph.nodes[idx]['room_type']
+                room_name = graph.room_class[room_type]
+                room_names.append(room_name)
+            if "living_room" in room_names:
+                living_room_component = component
+            if "kitchen" in room_names:
+                kitchen_component = component
+        
+        assert living_room_component is not None, "Living room component not found"
+        assert kitchen_component is not None, "Kitchen component not found"
+        assert len(living_room_component) == 4, f"Living room component should have 4 rooms, got {len(living_room_component)}"
+        assert len(kitchen_component) == 1, f"Kitchen component should have 1 room, got {len(kitchen_component)}"
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"]) 
