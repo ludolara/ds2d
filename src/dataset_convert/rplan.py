@@ -94,7 +94,7 @@ class RPLANConverter:
                 }
                 
                 spaces.append(room_data)
-                if room["room_type"] not in ["interior_door", "front_door"]:
+                if room["room_type"] not in ["interior_door"]:
                     total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
@@ -110,7 +110,7 @@ class RPLANConverter:
         if any(not neigh for neigh in input_graph.values()) or not nx.is_connected(nx.from_dict_of_lists(input_graph)):
             return None
         
-        only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door", "front_door"]]
+        only_rooms = [r for r in spaces if r["room_type"] not in ["interior_door"]]
         input_rooms = []
 
         # for room in spaces:
@@ -133,8 +133,8 @@ class RPLANConverter:
         # create input
         input_data = {
             "input": {
-                "room_count": len(only_rooms),
-                "total_area": round(total_area, self.round_value),
+                # "room_count": len(only_rooms),
+                # "total_area": round(total_area, self.round_value),
                 "spaces": input_rooms,
                 "input_graph": input_graph
             }
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     room_number = 8
     converter = RPLANConverter(room_number=room_number)
     ds = converter("datasets/rplan_json")
-    ds.save_to_disk(f"datasets/rplan_{room_number}")
+    ds.save_to_disk(f"datasets/final/rplan_{room_number}")
     print(ds)
     print("Train sample:", ds["train"][0])
     print("Test sample:", ds["test"][0])
