@@ -142,7 +142,7 @@ class RPLANConverter:
 
         return {
             "rplan_id": data.get("rplan_id"),
-            "room_count": len(only_rooms),
+            "room_count": len(only_rooms) - 1,
             "total_area": round(total_area, self.round_value),
             "input_graph": json.dumps(input_graph),
             "spaces": spaces,
@@ -185,11 +185,13 @@ class RPLANConverter:
         return self.create_dataset(raw)
 
 if __name__ == "__main__":
-    room_number = 5
-    converter = RPLANConverter(room_number=room_number)
-    ds = converter("datasets/rplan_json")
-    ds.save_to_disk(f"datasets/final/rplan_{room_number}")
-    print(ds)
-    print("Train sample:", ds["train"][0])
-    print("Test sample:", ds["test"][0])
-    print("Val sample:", ds["validation"][0])
+    for room_number in [5, 6, 7, 8]:
+        print(f"Processing rplan_{room_number}")
+        converter = RPLANConverter(room_number=room_number)
+        ds = converter("datasets/rplan_json")
+        ds.save_to_disk(f"datasets/final/rplan_{room_number}")
+        print(f"Saved rplan_{room_number}")
+        print(ds)
+        print("Train sample:", ds["train"][0])
+        print("Test sample:", ds["test"][0])
+        print("Val sample:", ds["validation"][0])

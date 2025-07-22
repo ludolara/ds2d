@@ -24,7 +24,7 @@ from src.utils.constants import SYSTEM_PROMPT
     
 def create_output(sample):
     output = {
-        "room_count": sample.get("room_count"),
+        # "room_count": sample.get("room_count"),
         "spaces": [
             {
                 "id": room.get("id"),

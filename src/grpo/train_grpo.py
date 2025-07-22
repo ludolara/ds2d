@@ -69,7 +69,7 @@ def main():
         warmup_steps=100,
         
         save_strategy="no",  # BestRewardCallback controls saving
-        save_total_limit=2,
+        save_total_limit=1,
         save_only_model=True
     )
 
