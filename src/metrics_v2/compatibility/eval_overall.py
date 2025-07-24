@@ -55,8 +55,7 @@ class Evaluate:
                 
                 spaces = output.get('spaces', [])
                 door_types = {'interior_door'}
-                # actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
-                actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
+                actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
                 if actual_room_count != rc:
                     continue
                 
@@ -115,7 +114,6 @@ class Evaluate:
                 
                 spaces = output.get('spaces', [])
                 door_types = {'interior_door'}
-                # actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
                 actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
                 if actual_room_count != rc:
                     continue

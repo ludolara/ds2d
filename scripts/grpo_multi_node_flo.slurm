@@ -16,9 +16,9 @@ module load python/3.11
 module load opencv
 module load arrow
 module load cuda/12
-source $SCRATCH/env/vllm/bin/activate
+source /home/l/luislara/links/projects/aip-pal/luislara/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-5}
+ROOM_NUMBER=${1:-8}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"

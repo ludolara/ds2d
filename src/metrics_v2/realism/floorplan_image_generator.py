@@ -248,8 +248,8 @@ class HouseDiffusionVisualizerDS2D:
                 door_name = {17: 'Interior Door', 15: 'Exterior Door'}.get(room_type, f'Type{room_type}')
                 door_counts[door_name] = door_counts.get(door_name, 0) + 1
         
-        print(f"Rooms: {room_counts}")
-        print(f"Doors/Walls: {door_counts}")
+        # print(f"Rooms: {room_counts}")
+        # print(f"Doors/Walls: {door_counts}")
         
         # Convert to image and save (enhanced with both SVG and PNG)
         if save_path:
@@ -257,20 +257,20 @@ class HouseDiffusionVisualizerDS2D:
                 # Save SVG version
                 svg_path = save_path.replace('.png', '.svg') if save_path.endswith('.png') else save_path
                 draw_color.saveSvg(svg_path)
-                print(f"SVG saved: {svg_path}")
+                # print(f"SVG saved: {svg_path}")
                 
                 # Also save PNG version
                 png_path = save_path.replace('.svg', '.png') if save_path.endswith('.svg') else save_path
                 svg_bytes = cairosvg.svg2png(draw_color.asSvg())
                 img = Image.open(io.BytesIO(svg_bytes))
                 img.save(png_path)
-                print(f"PNG saved: {png_path}")
+                # print(f"PNG saved: {png_path}")
             else:
                 # Save PNG version
                 svg_bytes = cairosvg.svg2png(draw_color.asSvg())
                 img = Image.open(io.BytesIO(svg_bytes))
                 img.save(save_path)
-                print(f"PNG saved: {save_path}")
+                # print(f"PNG saved: {save_path}")
         else:
             # Just convert for return
             svg_bytes = cairosvg.svg2png(draw_color.asSvg())
