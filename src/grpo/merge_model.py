@@ -3,8 +3,8 @@ from peft import PeftModel
 import torch
 
 base_model_path = "models/Llama-3.3-70B-Instruct"       
-adapter_path = "output/final/rplan6_2_70B_r64_a128_all"            
-merged_model_path = "models/final/rplan6_r64_a128-Llama-3.3-70B-Instruct"
+adapter_path = "output/final/rplan8_3_70B_r64_a128_all"            
+merged_model_path = "models/final/rplan8_r64_a128-Llama-3.3-70B-Instruct"
 # base_model_path = "models/Llama-3.1-8B-Instruct"       
 # adapter_path = "output/rplan_6_8B_r256_a512"            
 # merged_model_path = "models/r256_a512-Llama-3.1-8B-Instruct"

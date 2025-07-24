@@ -41,9 +41,9 @@ class Evaluate:
                     prompt = json.load(pf)
 
                 # Check if this prompt was trying to generate rc spaces
-                expected_room_count = prompt.get("room_count")
-                if expected_room_count != rc:
-                    continue
+                # expected_room_count = prompt.get("room_count")
+                # if expected_room_count != rc:
+                #     continue
 
                 with open(os.path.join(subfolder, '0.json')) as of:
                     output = json.load(of)
@@ -54,7 +54,8 @@ class Evaluate:
                 # input_graph = RPLANGraph.from_ds2d(output)
                 
                 spaces = output.get('spaces', [])
-                door_types = {'front_door', 'interior_door'}
+                door_types = {'interior_door'}
+                # actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
                 actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
                 if actual_room_count != rc:
                     continue
@@ -98,9 +99,9 @@ class Evaluate:
                     prompt = json.load(pf)
 
                 # Check if this prompt was trying to generate rc spaces
-                expected_room_count = prompt.get("room_count")
-                if expected_room_count != rc:
-                    continue
+                # expected_room_count = prompt.get("room_count")
+                # if expected_room_count != rc:
+                #     continue
                 
                 target_attempts += 1
 
@@ -113,7 +114,8 @@ class Evaluate:
                 input_graph = RPLANGraph.from_ds2d(output)
                 
                 spaces = output.get('spaces', [])
-                door_types = {'front_door', 'interior_door'}
+                door_types = {'interior_door'}
+                # actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
                 actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
                 if actual_room_count != rc:
                     continue

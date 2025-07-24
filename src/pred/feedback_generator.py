@@ -158,7 +158,6 @@ class FeedbackGenerator:
                         key_overlap = room_id if room_id not in polygons_overlap else f"{room_id}_{idx}"
                         polygons_overlap[key_overlap] = poly
                         
-                        # if room_type not in ["interior_door", "front_door"]:
                         if room_type not in ["interior_door"]:
                             key_area = room_id if room_id not in polygons_area else f"{room_id}_{idx}"
                             polygons_area[key_area] = poly
