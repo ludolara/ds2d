@@ -17,8 +17,8 @@ module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${1:-2}
-ROOM_NUMBER=${2:-6}
-OUTPUT_DIR="output/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all/"
+ROOM_NUMBER=${2:-5}
+OUTPUT_DIR="output/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all_better/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)

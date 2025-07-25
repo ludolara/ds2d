@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=train-grpo-70B
+#SBATCH --job-name=train-grpo-70B-5
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
-#SBATCH --nodes=9
-#SBATCH --mem=448G
+#SBATCH --nodes=5
+#SBATCH --mem=256G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=23:59:00
+#SBATCH --time=5:59:00
 #SBATCH --account=aip-pal
 
 export LOGLEVEL=INFO

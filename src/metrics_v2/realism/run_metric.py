@@ -7,7 +7,7 @@ from pytorch_fid.fid_score import calculate_fid_given_paths
 from floorplan_image_generator import HouseDiffusionVisualizerDS2D
 
 class RealismMetricGenerator:
-    def __init__(self, results_dir="results5_70B_r64_a128_all", resolution=512):
+    def __init__(self, results_dir="results_GRPO_70B_ckpt400_sampling", resolution=512):
         """
         Initialize the realism metric generator.
         
@@ -255,7 +255,7 @@ def save_realism_results(generator, fid_score, generated_count, gt_count, proces
 def main():
     """Main function to run the realism metric generation."""
     generator = RealismMetricGenerator(
-        results_dir="results7_70B_r64_a128_all",
+        results_dir="results_GRPO_70B_ckpt400_sampling",
         resolution=256
     )
     

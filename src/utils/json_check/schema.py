@@ -1,9 +1,12 @@
 schema = {
   "type": "object",
   "properties": {
-    # "room_count": {
-    #   "type": "integer"
-    # },
+    "room_count": {
+      "type": "integer"
+    },
+    "total_area": {
+      "type": "number"
+    },
     "spaces": {
       "type": "array",
       "items": {
@@ -41,6 +44,5 @@ schema = {
       }
     },
   },
-  # "required": ["room_count", "spaces"]
-  "required": ["spaces"]
+  "required": ["room_count", "total_area", "spaces"]
 }

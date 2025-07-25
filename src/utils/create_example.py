@@ -1,30 +1,10 @@
 import json
 from src.utils.constants import SYSTEM_PROMPT
-
-# def create_input(sample, is_str=True):
-#     inp = {
-#         "room_count": sample.get("room_count"),
-#         "total_area": sample.get("total_area"),
-#         "spaces": [
-#             {
-#                 "id": room.get("id"),
-#                 "room_type": room.get("room_type"),
-#                 "width": room.get("width"),
-#                 "height": room.get("height"),
-#                 "is_rectangular": room.get("is_rectangular"),
-#             }
-#             for room in sample.get("spaces", [])
-#         ],
-#         "input_graph": json.loads(sample.get("input_graph", "{}")),
-#     }
-#     if is_str:
-#         return str({"input": inp})
-#     else:
-#         return inp
     
 def create_output(sample):
     output = {
-        # "room_count": sample.get("room_count"),
+        "room_count": sample.get("room_count"),
+        "total_area": sample.get("total_area"),
         "spaces": [
             {
                 "id": room.get("id"),

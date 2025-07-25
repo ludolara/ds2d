@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=train-grpo-70B
+#SBATCH --job-name=grpo-5
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
-#SBATCH --nodes=9
-#SBATCH --mem=448G
+#SBATCH --nodes=5
+#SBATCH --mem=256G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=23:59:00
+#SBATCH --time=11:59:00
 #SBATCH --account=aip-pal
 
 export LOGLEVEL=INFO
@@ -18,7 +18,7 @@ module load arrow
 module load cuda/12
 source /home/l/luislara/links/projects/aip-pal/luislara/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-8}
+ROOM_NUMBER=${1:-5}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"
@@ -57,4 +57,3 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
 srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
 
 wait
-

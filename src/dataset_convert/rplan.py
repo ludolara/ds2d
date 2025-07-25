@@ -133,8 +133,8 @@ class RPLANConverter:
         # create input
         input_data = {
             "input": {
-                # "room_count": len(only_rooms),
-                # "total_area": round(total_area, self.round_value),
+                "room_count": len(only_rooms) - 1,
+                "total_area": round(total_area, self.round_value),
                 "spaces": input_rooms,
                 "input_graph": input_graph
             }

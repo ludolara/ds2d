@@ -114,7 +114,7 @@ class Evaluate:
                 
                 spaces = output.get('spaces', [])
                 door_types = {'interior_door'}
-                actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types])
+                actual_room_count = len([room for room in spaces if room.get('room_type', '').lower() not in door_types]) - 1
                 if actual_room_count != rc:
                     continue
                 
@@ -134,6 +134,8 @@ class Evaluate:
             return None, None, None, valid_indices_used
             
         error_rate = ((target_attempts - successful_attempts) / target_attempts * 100) if target_attempts > 0 else 0
+
+        print(f"target_attempts: {target_attempts}, successful_attempts: {successful_attempts}, error_rate: {error_rate}")  
         
         if not scores:
             return None, None, error_rate, valid_indices_used

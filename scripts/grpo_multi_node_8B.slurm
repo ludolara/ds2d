@@ -6,7 +6,7 @@
 #SBATCH --mem=96G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=5:59:00
+#SBATCH --time=00:40:00
 #SBATCH --account=aip-pal
 
 module load python/3.11
@@ -34,7 +34,11 @@ echo "vLLM node:             $VLLM_NODE"
 echo "Total processes:       $NUM_PROCESSES"
 echo "Head node IP:          $HEAD_NODE_IP"
 
-# Run training on the first n-1 nodes
+# Run vLLM server on the last node in background
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
+VLLM_PID=$!
+
+# Run training on the first n-1 nodes (foreground)
 srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODES}" accelerate launch \
      --config_file src/grpo/accelerate_configs/deepspeed_zero3.yaml \
      --num_processes $NUM_PROCESSES \
@@ -47,9 +51,9 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --output "output/8B_30_r256_GRPO_${NUM_NODES}n" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
-     --vllm_server_host $VLLM_NODE &
+     --vllm_server_host $VLLM_NODE
 
-# Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
-
-wait
+# Kill the vLLM server when training finishes
+echo "Training completed. Terminating vLLM server..."
+kill $VLLM_PID
+wait $VLLM_PID 2>/dev/null
