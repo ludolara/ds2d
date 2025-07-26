@@ -6,7 +6,7 @@ def metric_room_count_self_consistency(floorplan):
         return None
 
 def metric_room_id_self_consistency(floorplan):
-    return len(floorplan.get_room_ids()) == floorplan.get_num_rooms()
+    return len(floorplan.get_room_ids()) - 1 == floorplan.get_num_rooms()
 
 def metric_total_area_self_consistency(floorplan):
     room_ids = floorplan.get_room_ids()

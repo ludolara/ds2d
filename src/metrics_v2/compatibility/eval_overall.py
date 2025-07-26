@@ -135,7 +135,7 @@ class Evaluate:
             
         error_rate = ((target_attempts - successful_attempts) / target_attempts * 100) if target_attempts > 0 else 0
 
-        print(f"target_attempts: {target_attempts}, successful_attempts: {successful_attempts}, error_rate: {error_rate}")  
+        # print(f"target_attempts: {target_attempts}, successful_attempts: {successful_attempts}, error_rate: {error_rate}")  
         
         if not scores:
             return None, None, error_rate, valid_indices_used

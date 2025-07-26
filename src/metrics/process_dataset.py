@@ -46,6 +46,7 @@ class Floorplan():
             filtered_rooms = []
             for room in all_rooms:
                 room_type = room.get("room_type", "").lower()
+                # if room_type in ("front_door", "interior_door"):
                 if room_type not in ("interior_door"):
                     filtered_rooms.append(room)
             return filtered_rooms
@@ -53,7 +54,7 @@ class Floorplan():
             return []
     
     def get_num_rooms(self):
-        return len(self.get_rooms())
+        return len(self.get_rooms()) - 1
     
     def get_room_ids(self):
         ret = []

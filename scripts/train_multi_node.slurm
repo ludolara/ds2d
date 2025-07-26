@@ -4,9 +4,9 @@
 #SBATCH --error=logs/train_70B/job_error.log
 #SBATCH --nodes=6
 #SBATCH --mem=196G
-#SBATCH --cpus-per-gpu=3
+#SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=11:59:00
+#SBATCH --time=15:59:00
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
@@ -17,7 +17,7 @@ module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${1:-2}
-ROOM_NUMBER=${2:-5}
+ROOM_NUMBER=${2:-7}
 OUTPUT_DIR="output/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all_better/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )

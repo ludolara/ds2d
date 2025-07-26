@@ -28,7 +28,7 @@ class RealismMetricGenerator:
             self.source_path = Path(f"../../../{results_dir}/generations/rplan_8_70B/full_prompt")
             
         # Save results in project root under results_realism
-        self.realism_base = Path("results_realism") / results_dir
+        self.realism_base = Path("final_results") / results_dir
         self.generated_path = self.realism_base / "generated"
         self.generated_svg_path = self.realism_base / "generated_svg"
         self.ground_truth_path = self.realism_base / "ground_truth"
@@ -255,7 +255,7 @@ def save_realism_results(generator, fid_score, generated_count, gt_count, proces
 def main():
     """Main function to run the realism metric generation."""
     generator = RealismMetricGenerator(
-        results_dir="results_GRPO_70B_ckpt400_sampling",
+        results_dir="results8_GRPO_70B",
         resolution=256
     )
     
