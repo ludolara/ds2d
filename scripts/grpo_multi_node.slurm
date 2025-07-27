@@ -2,7 +2,7 @@
 #SBATCH --job-name=train-grpo-70B-5
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
-#SBATCH --nodes=5
+#SBATCH --nodes=7
 #SBATCH --mem=256G
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
@@ -18,7 +18,7 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-5}
+ROOM_NUMBER=${1:-6}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"

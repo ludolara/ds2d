@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 import torch
 from datetime import datetime
@@ -6,10 +7,10 @@ from tqdm import tqdm
 from pytorch_fid.fid_score import calculate_fid_given_paths
 from floorplan_image_generator import HouseDiffusionVisualizerDS2D
 
-class RealismMetricGenerator:
+class DiversityMetricGenerator:
     def __init__(self, results_dir="results_GRPO_70B_ckpt400_sampling", resolution=512):
         """
-        Initialize the realism metric generator.
+        Initialize the diversity metric generator.
         
         Args:
             results_dir (str): Name of the results directory to process
@@ -19,7 +20,7 @@ class RealismMetricGenerator:
         self.resolution = resolution
         self.visualizer = HouseDiffusionVisualizerDS2D(resolution=resolution)
         
-        # Set up paths - save in project root under results_realism
+        # Set up paths - save in project root under results_diversity
         if Path(results_dir).exists():
             # Running from project root
             self.source_path = Path(f"{results_dir}/generations/rplan_8_70B/full_prompt")
@@ -27,11 +28,11 @@ class RealismMetricGenerator:
             # Running from elsewhere
             self.source_path = Path(f"../../../{results_dir}/generations/rplan_8_70B/full_prompt")
             
-        # Save results in project root under results_realism
-        self.realism_base = Path("final_results") / results_dir
-        self.generated_path = self.realism_base / "generated"
-        self.generated_svg_path = self.realism_base / "generated_svg"
-        self.ground_truth_path = self.realism_base / "ground_truth"
+        # Save results in project root under results_diversity
+        self.diversity_base = Path("final_results") / results_dir
+        self.generated_path = self.diversity_base / "generated"
+        self.generated_svg_path = self.diversity_base / "generated_svg"
+        self.ground_truth_path = self.diversity_base / "ground_truth"
         
         # Create directories if they don't exist
         self.generated_path.mkdir(parents=True, exist_ok=True)
@@ -111,9 +112,9 @@ class RealismMetricGenerator:
         except Exception as e:
             print(f"❌ Error processing sample {sample_id}: {e}")
     
-    def generate_realism_metrics(self, max_samples=None):
+    def generate_diversity_metrics(self, max_samples=None):
         """
-        Generate realism metrics by processing all available samples.
+        Generate diversity metrics by processing all available samples.
         
         Args:
             max_samples (int, optional): Maximum number of samples to process
@@ -142,8 +143,8 @@ class RealismMetricGenerator:
             self.process_single_sample(sample_dir, sample_id)
             processed += 1
         
-        print(f"\n🎉 Realism metric generation complete!")
-        print(f"📊 Generated images saved in: {self.realism_base}")
+        print(f"\n🎉 Diversity metric generation complete!")
+        print(f"📊 Generated images saved in: {self.diversity_base}")
         
         # Print summary statistics
         generated_count = len(list(self.generated_path.glob("*.png")))
@@ -207,12 +208,12 @@ def compute_fid_score(generated_path, ground_truth_path, device="cuda" if torch.
         return None
 
 
-def save_realism_results(generator, fid_score, generated_count, gt_count, processed_count):
+def save_diversity_results(generator, fid_score, generated_count, gt_count, processed_count):
     """
-    Save realism metric results to a JSON file.
+    Save diversity metric results to a JSON file.
     
     Args:
-        generator (RealismMetricGenerator): The generator instance with paths
+        generator (DiversityMetricGenerator): The generator instance with paths
         fid_score (float): The computed FID score
         generated_count (int): Number of generated images
         gt_count (int): Number of ground truth images
@@ -240,7 +241,7 @@ def save_realism_results(generator, fid_score, generated_count, gt_count, proces
         }
     }
     
-    results_file = generator.realism_base / "realism.json"
+    results_file = generator.diversity_base / "diversity.json"
     
     try:
         with open(results_file, 'w') as f:
@@ -253,13 +254,18 @@ def save_realism_results(generator, fid_score, generated_count, gt_count, proces
 
 
 def main():
-    """Main function to run the realism metric generation."""
-    generator = RealismMetricGenerator(
-        results_dir="results8_GRPO_70B",
+    """Main function to run the diversity metric generation."""
+    if len(sys.argv) < 2:
+        print("Usage: python run_metric.py <results_directory>")
+        sys.exit(1)
+
+    results_dir = sys.argv[1]
+    generator = DiversityMetricGenerator(
+        results_dir=results_dir,
         resolution=256
     )
     
-    generator.generate_realism_metrics() 
+    generator.generate_diversity_metrics() 
     
     generated_count = len(list(generator.generated_path.glob("*.png")))
     gt_count = len(list(generator.ground_truth_path.glob("*.png")))
@@ -276,7 +282,7 @@ def main():
         print("\n❌ Could not compute FID score")
     
     processed_count = len([d for d in generator.source_path.iterdir() if d.is_dir() and d.name.isdigit()])
-    save_realism_results(generator, fid_score, generated_count, gt_count, processed_count)
+    save_diversity_results(generator, fid_score, generated_count, gt_count, processed_count)
 
 if __name__ == "__main__":
     main()

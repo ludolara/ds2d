@@ -4,10 +4,14 @@
 #SBATCH --error=logs/train_grpo_70B/job_error.log
 #SBATCH --nodes=5
 #SBATCH --mem=256G
-#SBATCH --cpus-per-gpu=3
+#SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=11:59:00
+#SBATCH --time=0:15:00
 #SBATCH --account=aip-pal
+
+export HF_HOME=$SCRATCH
+export HF_DATASETS_CACHE=$SCRATCH
+export VLLM_CACHE_ROOT=$SCRATCH
 
 export LOGLEVEL=INFO
 export WANDB_MODE=offline
@@ -16,7 +20,7 @@ module load python/3.11
 module load opencv
 module load arrow
 module load cuda/12
-source /home/l/luislara/links/projects/aip-pal/luislara/env/vllm/bin/activate
+source $SCRATCH/env/vllm/bin/activate
 
 ROOM_NUMBER=${1:-5}
 

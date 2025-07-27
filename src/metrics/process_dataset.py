@@ -108,8 +108,7 @@ class Floorplan():
         polygons = {}
 
         for idx, room in enumerate(rooms):
-            # if room.get("room_type") in ("front_door", "interior_door"):
-            if room.get("room_type") in ("interior_door"):
+            if room.get("room_type") in ("front_door", "interior_door"):
                 continue
             try:
                 room_id = str(room.get("id"))

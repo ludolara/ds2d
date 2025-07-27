@@ -25,4 +25,4 @@ Additional rules:
 Return only a JSON object containing an `output` key without extra commentary or explanation.
 """
 
-OVERLAP_TOL = 1e-6
+OVERLAP_TOL = 0

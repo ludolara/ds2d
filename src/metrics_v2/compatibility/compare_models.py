@@ -5,6 +5,7 @@ only on the intersection of valid JSON instances across all models.
 
 import os
 import sys
+import json
 from eval_overall import Evaluate
 
 def get_intersection_of_valid_indices(result_folders, room_counts):
@@ -37,6 +38,63 @@ def get_intersection_of_valid_indices(result_folders, room_counts):
     
     # Convert back to sorted lists
     return {rc: sorted(list(indices)) for rc, indices in all_valid_indices.items()}
+
+def save_compatibility_json(all_stats_union, all_stats_intersection, result_folders, model_names, room_counts):
+    """
+    Save compatibility results to JSON file in final_results directory.
+    """
+    # Extract the first folder name (before the first slash)
+    first_folder = result_folders[0] if result_folders else ""
+    result_folder = first_folder.split('/')[0]
+    
+    # Create output directory
+    output_dir = f"final_results/{result_folder}"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Prepare JSON data
+    json_data = {
+        "room_counts": room_counts,
+        "model_names": model_names,
+        "union_stats": {},
+        "intersection_stats": {}
+    }
+    
+    # Add union stats
+    for model_name in model_names:
+        if model_name in all_stats_union:
+            json_data["union_stats"][model_name] = {}
+            stats = all_stats_union[model_name]
+            for rc in room_counts:
+                if rc in stats and stats[rc][0] is not None:
+                    json_data["union_stats"][model_name][str(rc)] = {
+                        "mean": stats[rc][0],
+                        "std": stats[rc][1], 
+                        "error_percentage": stats[rc][2]
+                    }
+                else:
+                    json_data["union_stats"][model_name][str(rc)] = None
+    
+    # Add intersection stats  
+    for model_name in model_names:
+        if model_name in all_stats_intersection:
+            json_data["intersection_stats"][model_name] = {}
+            stats = all_stats_intersection[model_name]
+            for rc in room_counts:
+                if rc in stats and stats[rc][0] is not None:
+                    json_data["intersection_stats"][model_name][str(rc)] = {
+                        "mean": stats[rc][0],
+                        "std": stats[rc][1],
+                        "error_percentage": stats[rc][2]
+                    }
+                else:
+                    json_data["intersection_stats"][model_name][str(rc)] = None
+    
+    # Save to file
+    output_file = f"{output_dir}/compatibility.json"
+    with open(output_file, 'w') as f:
+        json.dump(json_data, f, indent=2)
+    
+    print(f"\nCompatibility results saved to: {output_file}")
 
 def compare_models(result_folders, model_names=None, room_counts=None):
     """
@@ -125,6 +183,9 @@ def compare_models(result_folders, model_names=None, room_counts=None):
                 row_cells.extend(["–", "–"])
         row = "| " + " | ".join(row_cells) + " |"
         print(row)
+
+    # Save results to JSON
+    save_compatibility_json(all_stats_union, all_stats_intersection, result_folders, model_names, room_counts)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

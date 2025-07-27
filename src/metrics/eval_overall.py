@@ -88,6 +88,15 @@ class Evaluate:
         for col, stats in formatted_stats.items():
             print(f"{col}: {stats}")
         
+        # Prepare results dictionary
+        results = {
+            "all_rooms": {
+                col: {"mean": round(column_avg[col], 2), "std": round(column_std[col], 2)} 
+                for col in strat_df.columns
+            },
+            "by_room_count": {}
+        }
+        
         # Compute and display metrics per room count if enabled
         if self.if_separate_num_room_results:
             for num_rooms in [5, 6, 7, 8]:
@@ -95,8 +104,8 @@ class Evaluate:
                     continue  # Skip if no data for this room count
                 room_strat_df = None
                 for model_tag, strat_lookup in self.RESULTS_separated_by_num_room[num_rooms].items():
-                    for strat, results in strat_lookup.items():
-                        summary_room, _ = results.summarize()
+                    for strat, results_data in strat_lookup.items():
+                        summary_room, _ = results_data.summarize()
                         df_room = get_df_from_summary_v2(
                             summary_room,
                             categories=summary_room.__dict__.keys(),
@@ -114,6 +123,14 @@ class Evaluate:
                 print(f"\nMetrics for {num_rooms} rooms:")
                 for col, stats in formatted_room_stats.items():
                     print(f"{col}: {stats}")
+                
+                # Add to results dictionary
+                results["by_room_count"][str(num_rooms)] = {
+                    col: {"mean": round(room_avg[col], 2), "std": round(room_std[col], 2)} 
+                    for col in room_strat_df.columns
+                }
+        
+        return results
     
     def get_model_tags(self, experiment_list):
         model_tags = []
