@@ -19,10 +19,10 @@ def main():
     parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
     parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
-    parser.add_argument("--eval_sample_size", type=int, default=200, help="Number of examples to use for evaluation")
+    parser.add_argument("--eval_sample_size", type=int, default=250, help="Number of examples to use for evaluation")
     # parser.add_argument("--eval_sample_size", type=int, default=20, help="Number of examples to use for evaluation")
     parser.add_argument("--no_eval", action="store_true", help="Disable evaluation during training")
-    parser.add_argument("--early_stopping_patience", type=int, default=3, help="Early stopping patience")
+    parser.add_argument("--early_stopping_patience", type=int, default=2, help="Early stopping patience")
     
     args = parser.parse_args()
 
@@ -37,6 +37,8 @@ def main():
     if "validation" in dataset:
         eval_dataset = (
             dataset["validation"]
+            .shuffle(seed=42)
+            .select(range(args.eval_sample_size))
             .map(lambda x: {"prompt": build_prompt(x)})
         )
     
@@ -70,7 +72,10 @@ def main():
         
         save_strategy="no",  # BestRewardCallback controls saving
         save_total_limit=1,
-        save_only_model=True
+        save_only_model=True,
+        
+        # Reward weights: is_overlap (50%), total_area (25%), compatibility (25%)
+        reward_weights=[0.5, 0.25, 0.25],
     )
 
     reward_calculator = RewardCalculator()
