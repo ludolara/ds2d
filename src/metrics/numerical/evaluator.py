@@ -70,7 +70,6 @@ class NumericalEvaluate:
                 cell = "–"
             else:
                 if key in ("total_area_pct_diff", "polygon_area_pct_diff_mean"):
-                    # Display as ratio consistency: (1 - fraction_diff) in [0,1]
                     mean_disp = max(0.0, min(1.0, (1.0 - mean)))
                     std_disp = min(1.0, std if std is not None else 0.0)
                     cell = f"{mean_disp:.{self.viz_round}f} ± {std_disp:.{self.viz_round}f}"

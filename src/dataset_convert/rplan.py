@@ -19,7 +19,7 @@ class RPLANConverter:
     """
     Convert raw RPLAN housegan JSON into a Hugging Face DatasetDict.
     """
-    round_value: int = 1
+    round_value: int = 2
     original_map = RPLAN_ROOM_CLASS
     room_map: Dict[int, str] = field(init=False)
     pixel_to_meter: float = field(init=False)
@@ -94,7 +94,7 @@ class RPLANConverter:
                 }
                 
                 spaces.append(room_data)
-                if room["room_type"] not in ["interior_door"]:
+                if room["room_type"] not in ["interior_door", "front_door"]:
                     total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
@@ -162,6 +162,7 @@ class RPLANConverter:
             target_room_plans = [item for item in converted if item["room_count"] == self.room_number]
             other_plans = [item for item in converted if item["room_count"] != self.room_number]
             test, val = train_test_split(target_room_plans, test_size=0.5, shuffle=True)
+            random.seed(84)
             random.shuffle(other_plans)
             train = other_plans
 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         print(f"Processing rplan_{room_number}")
         converter = RPLANConverter(room_number=room_number)
         ds = converter("datasets/rplan_json")
-        ds.save_to_disk(f"datasets/final/rplan_{room_number}")
+        ds.save_to_disk(f"datasets/final_2/rplan_{room_number}")
         print(f"Saved rplan_{room_number}")
         print(ds)
         print("Train sample:", ds["train"][0])

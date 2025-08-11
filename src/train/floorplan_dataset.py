@@ -11,7 +11,7 @@ def shuffle_rooms(example):
 
 def get_custom_dataset(dataset_config, tokenizer, split):
     dataset = load_from_disk(dataset_config.data_path)[split]
-    dataset = dataset.shuffle(seed=42)
+    dataset = dataset.shuffle(seed=84)
     dataset = dataset.with_transform(shuffle_rooms)
 
     def process_sample(sample):

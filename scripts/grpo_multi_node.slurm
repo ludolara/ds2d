@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=grpo-8
+#SBATCH --job-name=grpo-7
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
 #SBATCH --nodes=7
 #SBATCH --mem=256G
 #SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=11:59:00
+#SBATCH --time=4:59:00
 #SBATCH --account=aip-pal
 
 export LOGLEVEL=INFO
@@ -18,7 +18,7 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-8}
+ROOM_NUMBER=${1:-7}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"
@@ -65,4 +65,3 @@ kill $VLLM_PID 2>/dev/null || true
 srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" pkill -f "trl vllm-serve" || true
 
 wait
-
