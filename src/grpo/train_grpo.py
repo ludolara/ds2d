@@ -2,13 +2,10 @@ import argparse
 from datasets import load_from_disk
 from src.grpo.reward_calculator import RewardCalculator
 from src.utils import build_prompt
-# from trl import GRPOConfig, GRPOTrainer
 from trl import GRPOConfig
 from dotenv import load_dotenv
 import wandb
-# import os
-# import glob
-from src.grpo.custom_grpo_trainer import CustomGRPOTrainer, BestRewardCallback
+from src.grpo.custom_grpo_trainer import BestRewardCallback, CustomGRPOTrainer
 
 load_dotenv()
 wandb.init(project="floorplans", mode="offline")
@@ -19,8 +16,7 @@ def main():
     parser.add_argument("--model", type=str, default="models/Llama-4-Scout-17B-16E-Instruct", help="Model name")
     parser.add_argument("--dataset", type=str, default="hf_datasets/rplan_converted_no_doors", help="Dataset name")
     parser.add_argument("--vllm_server_host", type=str, default="", help="The server IP")
-    parser.add_argument("--eval_sample_size", type=int, default=250, help="Number of examples to use for evaluation")
-    # parser.add_argument("--eval_sample_size", type=int, default=20, help="Number of examples to use for evaluation")
+    parser.add_argument("--eval_sample_size", type=int, default=400, help="Number of examples to use for evaluation")
     parser.add_argument("--no_eval", action="store_true", help="Disable evaluation during training")
     parser.add_argument("--early_stopping_patience", type=int, default=2, help="Early stopping patience")
     
@@ -56,9 +52,9 @@ def main():
         ## save_steps=4,
         # eval_steps=4 if do_eval else None, 
         
-        logging_steps=50,
+        logging_steps=100,
         # save_steps=100,
-        eval_steps=100 if do_eval else None,
+        eval_steps=200 if do_eval else None,
         
         report_to="wandb",
         use_vllm=True,
@@ -72,10 +68,7 @@ def main():
         
         save_strategy="no",  # BestRewardCallback controls saving
         save_total_limit=1,
-        save_only_model=True,
-        
-        # Reward weights: is_overlap (50%), total_area (25%), compatibility (25%)
-        reward_weights=[0.5, 0.25, 0.25],
+        save_only_model=True
     )
 
     reward_calculator = RewardCalculator()

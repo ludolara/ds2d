@@ -83,28 +83,66 @@ class FloorplanGenerator:
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
     
+    # def _select_least(self, candidates, input_prompt):
+    #     """
+    #     Return the candidate minimizing first total_overlap_area,
+    #     then compatibility_score.
+    #     """
+    #     def _key(cand):
+    #         output = extract_output_json(cand.text)
+    #         analysis = FeedbackGenerator.analyze(output, input_prompt)
+    #         overlap = analysis.get('total_overlap_area', float('inf'))
+
+    #         try:
+    #             input_graph = RPLANGraph.from_ds2d(output)
+    #             expected_graph = RPLANGraph.from_labeled_adjacency(
+    #                 input_prompt.get("input_graph", {})
+    #             )
+    #             compatibility_score = input_graph.compatibility_score(expected_graph)
+    #         except Exception:
+    #             compatibility_score = float('inf')
+
+    #         return (overlap, compatibility_score)
+
+    #     return min(candidates, key=_key)
+    
     def _select_least(self, candidates, input_prompt):
         """
-        Return the candidate minimizing first total_overlap_area,
-        then compatibility_score.
+        Select the best candidate by prioritizing:
+        1. JSON validity (valid JSON first)
+        2. Minimum total_overlap_area 
+        3. Minimum compatibility_score
         """
-        def _key(cand):
-            output = extract_output_json(cand.text)
-            analysis = FeedbackGenerator.analyze(output, input_prompt)
-            overlap = analysis.get('total_overlap_area', float('inf'))
-
+        def _evaluate_candidate(candidate):
+            # First priority: JSON validity
             try:
-                input_graph = RPLANGraph.from_ds2d(output)
+                output_json = extract_output_json(candidate.text)
+                if not output_json:  # Invalid or empty JSON
+                    return (1, float('inf'), float('inf'))
+                json_invalid = 0
+            except Exception:
+                return (1, float('inf'), float('inf'))  
+            
+            # Second priority: total overlap area
+            try:
+                analysis = FeedbackGenerator.analyze(output_json, input_prompt)
+                overlap_area = analysis.get('total_overlap_area', float('inf'))
+            except Exception:
+                overlap_area = float('inf')
+            
+            # Third priority: compatibility score
+            try:
+                input_graph = RPLANGraph.from_ds2d(output_json)
                 expected_graph = RPLANGraph.from_labeled_adjacency(
                     input_prompt.get("input_graph", {})
                 )
                 compatibility_score = input_graph.compatibility_score(expected_graph)
             except Exception:
                 compatibility_score = float('inf')
-
-            return (overlap, compatibility_score)
-
-        return min(candidates, key=_key)
+            
+            return (json_invalid, overlap_area, compatibility_score)
+        
+        return min(candidates, key=_evaluate_candidate)
 
     def generate_floorplans(self):
         for i in tqdm(range(0, self.total_examples, self.batch_size), desc="Generating floorplans"):

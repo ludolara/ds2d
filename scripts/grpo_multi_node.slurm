@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=train-grpo-70B-5
+#SBATCH --job-name=grpo-8
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
 #SBATCH --nodes=7
 #SBATCH --mem=256G
-#SBATCH --cpus-per-gpu=3
+#SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
 #SBATCH --time=11:59:00
 #SBATCH --account=aip-pal
@@ -18,11 +18,11 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-5}
+ROOM_NUMBER=${1:-8}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"
-OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_9n_better"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_7n_3rewards_4"
 
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
@@ -38,6 +38,10 @@ echo "vLLM node:             $VLLM_NODE"
 echo "Total processes:       $NUM_PROCESSES"
 echo "Head node IP:          $HEAD_NODE_IP"
 
+# Run vLLM server on the last node in background
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
+VLLM_PID=$!
+
 # Run training on the first n-1 nodes
 srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODES}" accelerate launch \
      --config_file src/grpo/accelerate_configs/deepspeed_zero3.yaml \
@@ -51,10 +55,14 @@ srun --nodes=$NUM_TRAIN_NODES --ntasks=$NUM_TRAIN_NODES --nodelist="${TRAIN_NODE
      --output "${OUTPUT_DIR}" \
      --model "${MODEL}" \
      --dataset "${DATASET}" \
-     --vllm_server_host $VLLM_NODE &
+     --vllm_server_host $VLLM_NODE
+TRAINING_EXIT_CODE=$?
 
-# Run vLLM server on the last node 
-srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" trl vllm-serve --model "${MODEL}" --tensor_parallel_size 4 --log_level warning --dtype bfloat16 &
+# Kill the vLLM server after training completes
+echo "Training completed with exit code: $TRAINING_EXIT_CODE"
+echo "Terminating vLLM server..."
+kill $VLLM_PID 2>/dev/null || true
+srun --nodes=1 --ntasks=1 --nodelist="${VLLM_NODE}" pkill -f "trl vllm-serve" || true
 
 wait
 

@@ -3,30 +3,29 @@ from trl import GRPOTrainer
 from transformers import TrainerCallback
 
 class CustomGRPOTrainer(GRPOTrainer):
-    # def __init__(self, *args, eval_sample_size=200, random_eval=True, **kwargs):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, eval_sample_size=50, random_eval=True, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.eval_sample_size = eval_sample_size
-        # self.random_eval = random_eval
+        self.eval_sample_size = eval_sample_size
+        self.random_eval = random_eval
         
-    # def get_eval_dataloader(self, eval_dataset=None):
-    #     '''
-    #     Samples the evaluation dataset and returns a subset 
-    #     of size self.eval_sample_size. If random_eval is True, uses different 
-    #     examples each evaluation. If False, uses fixed subset.
-    #     '''
-    #     if eval_dataset is None:
-    #         eval_dataset = self.eval_dataset
+    def get_eval_dataloader(self, eval_dataset=None):
+        '''
+        Samples the evaluation dataset and returns a subset 
+        of size self.eval_sample_size. If random_eval is True, uses different 
+        examples each evaluation. If False, uses fixed subset.
+        '''
+        if eval_dataset is None:
+            eval_dataset = self.eval_dataset
             
-    #     if len(eval_dataset) <= self.eval_sample_size:
-    #         return super().get_eval_dataloader(eval_dataset)
+        if len(eval_dataset) <= self.eval_sample_size:
+            return super().get_eval_dataloader(eval_dataset)
             
-    #     if self.random_eval:
-    #         idxs = random.sample(range(len(eval_dataset)), self.eval_sample_size)
-    #         eval_subset = eval_dataset.select(idxs)
-    #     else:
-    #         eval_subset = eval_dataset.select(range(self.eval_sample_size))
-    #     return super().get_eval_dataloader(eval_subset)
+        if self.random_eval:
+            idxs = random.sample(range(len(eval_dataset)), self.eval_sample_size)
+            eval_subset = eval_dataset.select(idxs)
+        else:
+            eval_subset = eval_dataset.select(range(self.eval_sample_size))
+        return super().get_eval_dataloader(eval_subset)
 
 class BestRewardCallback(TrainerCallback):
     def __init__(self, early_stopping_patience=3):

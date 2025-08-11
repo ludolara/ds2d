@@ -294,7 +294,7 @@ def main():
     results_dir = sys.argv[1]
     generator = DiversityMetricGenerator(
         results_dir=results_dir,
-        resolution=512
+        resolution=256
     )
     
     generator.generate_diversity_metrics() 
