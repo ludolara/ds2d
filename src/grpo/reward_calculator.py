@@ -90,7 +90,8 @@ class RewardCalculator:
             # self._conditional_reward_valid_json(
             self._conditional_reward(
                 s,
-                lambda st: st.get("total_area", 0.0)
+                # lambda st: self._linear_reward(st.get("total_area", 0.0))
+                lambda st: st.get("total_area", 0.0)        
             )
             for s in stats
         ]

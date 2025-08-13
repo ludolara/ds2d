@@ -1,8 +1,8 @@
 import os
 from typing import Dict, List, Tuple, Optional
 from src.utils.json_check.verify import is_valid_json
-from src.metrics_v2.numerical.utils import NumericalUtils
-from src.metrics_v2.numerical.calculator import NumericalMetricsCalculator
+from src.metrics.numerical.utils import NumericalUtils
+from src.metrics.numerical.calculator import NumericalMetricsCalculator
 
 
 class NumericalEvaluate:
@@ -13,14 +13,16 @@ class NumericalEvaluate:
         self.viz_round = max(0, int(viz_round))
         self.metric_keys = [
             ("json_validity", "JSON Validity ↑"),
-            ("room_count_match_pct", "Room Count ↑"),
-            ("total_area_pct_diff", "Total Area ↑"),
-            ("polygon_area_pct_diff_mean", "Polygon Area ↑"),
+            # ("room_count_match_pct", "Room Count ↑"),
+            # ("total_area_pct_diff", "Total Area ↑"),
+            # ("polygon_area_pct_diff_mean", "Polygon Area ↑"),
             ("overlap_present_pct", "Overlap ↓"),
             ("percentage_overlap_pct", "Percentage Overlap ↓"),
-            ("prompt_room_count_pct", "Prompt Room Count ↑"),
-            ("prompt_total_area_coverage_pct", "Prompt Total Area ↑"),
-            ("prompt_room_id_recall_pct", "Prompt Room ID ↑"),
+            # ("prompt_room_count_pct", "Prompt Room Count ↑"),
+            # ("prompt_total_area_coverage_pct", "Prompt Total Area ↑"),
+            ("prompt_room_id_recall_pct", "Room ID ↑"),
+            ("prompt_room_area_mape_pct", "Room Area MAPE ↓"),
+            ("prompt_room_area_compliance_pct", "Rooms Area Compliance (10%) ↑"),
         ]
 
     def evaluate(self) -> Tuple[Dict[str, Tuple[Optional[float], Optional[float]]], List[int]]:
@@ -67,14 +69,9 @@ class NumericalEvaluate:
         for key, title in self.metric_keys:
             mean, std = stats[key]
             if mean is None:
-                cell = "–"
+                cell = "-"
             else:
-                if key in ("total_area_pct_diff", "polygon_area_pct_diff_mean"):
-                    mean_disp = max(0.0, min(1.0, (1.0 - mean)))
-                    std_disp = min(1.0, std if std is not None else 0.0)
-                    cell = f"{mean_disp:.{self.viz_round}f} ± {std_disp:.{self.viz_round}f}"
-                else:
-                    cell = f"{mean:.{self.viz_round}f} ± {std:.{self.viz_round}f}"
+                cell = f"{mean:.{self.viz_round}f} ± {std:.{self.viz_round}f}"
             print(f"| {title} | {cell} |")
         print()
 

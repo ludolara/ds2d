@@ -4,13 +4,13 @@ import json
 
 eval_path = sys.argv[1]
 
-from src.metrics_v2.compatibility.eval_overall import Evaluate
+from src.metrics.compatibility.eval_overall import Evaluate
 
 overall_evaluation = Evaluate(eval_path)
 
 stats, all_valid_indices = overall_evaluation.evaluate()
 
-result_folder = eval_path.split('/')[0]
+result_folder = eval_path.split('/')[1]
 
 output_dir = f"final_results/{result_folder}"
 os.makedirs(output_dir, exist_ok=True)

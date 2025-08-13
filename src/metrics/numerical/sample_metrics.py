@@ -11,4 +11,6 @@ class SampleMetrics:
     percentage_overlap_pct: Optional[float]
     prompt_room_count_pct: Optional[float]
     prompt_total_area_coverage_pct: Optional[float]
-    prompt_room_id_recall_pct: Optional[float] 
+    prompt_room_id_recall_pct: Optional[float]
+    prompt_room_area_compliance_pct: Optional[float]
+    prompt_room_area_mape_pct: Optional[float] 

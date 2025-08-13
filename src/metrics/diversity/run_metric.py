@@ -17,7 +17,7 @@ class DiversityMetricGenerator:
             results_dir (str): Name of the results directory to process
             resolution (int): Resolution for generated images
         """
-        self.results_dir = results_dir
+        self.results_dir = Path(results_dir).name
         self.resolution = resolution
         self.visualizer = HouseDiffusionVisualizerDS2D(resolution=resolution)
         self.direct_visualizer = DirectVisualizer(resolution=resolution)
@@ -25,13 +25,13 @@ class DiversityMetricGenerator:
         # Set up paths - save in project root under results_diversity
         if Path(results_dir).exists():
             # Running from project root
-            self.source_path = Path(f"{results_dir}/generations/rplan_8_70B/full_prompt")
+            self.source_path = Path(f"{results_dir}")
         else:
             # Running from elsewhere
-            self.source_path = Path(f"../../../{results_dir}/generations/rplan_8_70B/full_prompt")
+            self.source_path = Path(f"../../../{results_dir}")
             
         # Save results in project root under final_results with organized folders
-        self.diversity_base = Path("final_results") / results_dir
+        self.diversity_base = Path("final_results") / self.results_dir
         
         # HouseDiffusion visualizations
         self.housediffusion_base = self.diversity_base / "housediffusion_viz"

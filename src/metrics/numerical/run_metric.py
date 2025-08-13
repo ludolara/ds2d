@@ -1,7 +1,7 @@
 import os
 import json
 import argparse
-from src.metrics_v2.numerical.evaluator import NumericalEvaluate
+from src.metrics.numerical.evaluator import NumericalEvaluate
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     evaluator = NumericalEvaluate(eval_path, viz_round=args.viz_round)
     stats, valid_indices = evaluator.evaluate()
 
-    result_folder = eval_path.split('/')[0]
+    result_folder = eval_path.split('/')[1]
     output_dir = f"final_results/{result_folder}"
     os.makedirs(output_dir, exist_ok=True)
 

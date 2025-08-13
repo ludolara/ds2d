@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=peft-5
+#SBATCH --job-name=peft-6
 #SBATCH --output=logs/train_70B/job_output.log
 #SBATCH --error=logs/train_70B/job_error.log
 #SBATCH --nodes=6
@@ -17,7 +17,7 @@ module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${1:-2}
-ROOM_NUMBER=${2:-5}
+ROOM_NUMBER=${2:-6}
 OUTPUT_DIR="output/final_2/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )

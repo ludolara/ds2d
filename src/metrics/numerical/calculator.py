@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
-from src.metrics_v2.numerical.utils import NumericalUtils
-from src.metrics_v2.numerical.sample_metrics import SampleMetrics
+from src.metrics.numerical.utils import NumericalUtils
+from src.metrics.numerical.sample_metrics import SampleMetrics
 
 
 class NumericalMetricsCalculator:
@@ -49,25 +49,85 @@ class NumericalMetricsCalculator:
         prompt_room_count_pct: Optional[float] = None
         prompt_total_area_coverage_pct: Optional[float] = None
         prompt_room_id_recall_pct: Optional[float] = None
+        prompt_room_area_compliance_pct: Optional[float] = None
+        prompt_room_area_mape_pct: Optional[float] = None
 
         if isinstance(self.prompt_fp, dict):
-            # 6) Prompt Room Count (↑): min(actual, prompt)/prompt
+            # 6) Prompt Room Count (↑)
             prompt_room_count = self.prompt_fp.get("room_count")
             if isinstance(prompt_room_count, int) and prompt_room_count > 0 and self.actual_room_count is not None:
                 prompt_room_count_pct = min(self.actual_room_count, prompt_room_count) / prompt_room_count
 
-            # 7) Prompt Total Area coverage (↑): sum polygon areas / prompt_total_area
+            # 7) Prompt Total Area coverage (↑)
             prompt_total_area = self.prompt_fp.get("total_area")
             if isinstance(prompt_total_area, (int, float)) and prompt_total_area > 0:
                 polygon_total_area = sum(p.area for p in self.polygons.values())
                 cov = NumericalUtils.safe_ratio(polygon_total_area, float(prompt_total_area))
                 prompt_total_area_coverage_pct = cov
 
-            # 8) Prompt Room ID recall (↑): |gen ∩ prompt| / |prompt|
+            # 8) Prompt Room ID recall (↑)
             gen_ids = NumericalUtils.room_ids_set_from_spaces(NumericalUtils.get_rooms_list(self.output_fp))
             prompt_ids = NumericalUtils.room_ids_set_from_spaces(self.prompt_fp.get("spaces", []))
             if len(prompt_ids) > 0:
                 prompt_room_id_recall_pct = len(gen_ids & prompt_ids) / len(prompt_ids)
+
+            # 9) Prompt per-room area metrics — match by room id
+            try:
+                # Map generated polygon areas by id
+                gen_area_by_id: Dict[str, float] = {}
+                for key, poly in self.polygons.items():
+                    gen_area_by_id[str(key)] = float(poly.area)
+
+                # Collect percent diffs where prompt supplies area and id matches
+                diffs: List[float] = []
+                total_eligible = 0
+                total_compliant = 0
+                COMPLIANCE_TOL_PCT = 10.0
+                for room in self.prompt_fp.get("spaces", []):
+                    rid = room.get("id")
+                    if rid is None:
+                        continue
+                    rid = str(rid)
+
+                    prompt_area: Optional[float] = None
+                    area_val = room.get("area")
+                    if isinstance(area_val, (int, float)) and float(area_val) > 0:
+                        prompt_area = float(area_val)
+                    else:
+                        w = room.get("width")
+                        h = room.get("height")
+                        try:
+                            if w is not None and h is not None:
+                                w_f = float(w)
+                                h_f = float(h)
+                                if w_f > 0 and h_f > 0:
+                                    prompt_area = w_f * h_f
+                        except Exception:
+                            prompt_area = None
+
+                    if prompt_area is None:
+                        continue
+
+                    gen_area = gen_area_by_id.get(rid)
+                    if gen_area is None or float(gen_area) <= 0:
+                        continue
+
+                    total_eligible += 1
+
+                    pd = NumericalUtils.percent_diff(float(prompt_area), float(gen_area))
+                    if pd is not None:
+                        diffs.append(pd / 100.0)
+                        if pd <= COMPLIANCE_TOL_PCT:
+                            total_compliant += 1
+
+                if diffs:
+                    # MAPE as a fraction in [0, +) (typically in [0,1] for reasonable errors)
+                    prompt_room_area_mape_pct = sum(diffs) / len(diffs)
+                if total_eligible > 0:
+                    prompt_room_area_compliance_pct = total_compliant / total_eligible
+            except Exception:
+                prompt_room_area_compliance_pct = None
+                prompt_room_area_mape_pct = None
 
         return SampleMetrics(
             room_count_match_pct=room_count_match_pct,
@@ -78,4 +138,6 @@ class NumericalMetricsCalculator:
             prompt_room_count_pct=prompt_room_count_pct,
             prompt_total_area_coverage_pct=prompt_total_area_coverage_pct,
             prompt_room_id_recall_pct=prompt_room_id_recall_pct,
+            prompt_room_area_compliance_pct=prompt_room_area_compliance_pct,
+            prompt_room_area_mape_pct=prompt_room_area_mape_pct,
         ) 

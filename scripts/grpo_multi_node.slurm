@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=grpo-7
+#SBATCH --job-name=grpo-5
 #SBATCH --output=logs/train_grpo_70B/job_output.log
 #SBATCH --error=logs/train_grpo_70B/job_error.log
 #SBATCH --nodes=7
 #SBATCH --mem=256G
 #SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=4:59:00
+#SBATCH --time=2:59:00
 #SBATCH --account=aip-pal
 
 export LOGLEVEL=INFO
@@ -18,11 +18,11 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/vllm/bin/activate
 
-ROOM_NUMBER=${1:-7}
+ROOM_NUMBER=${1:-5}
 
 MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
 DATASET="datasets/final/rplan_${ROOM_NUMBER}"
-OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_7n_3rewards_4"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_7n"
 
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
