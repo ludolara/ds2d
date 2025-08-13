@@ -5,10 +5,11 @@ import torch
 from datetime import datetime
 from tqdm import tqdm
 from pytorch_fid.fid_score import calculate_fid_given_paths
-from floorplan_image_generator import HouseDiffusionVisualizerDS2D
+from src.plot.housediffusion_visualizer import HouseDiffusionVisualizerDS2D
+from src.plot.direct_visualizer import DirectVisualizer
 
 class DiversityMetricGenerator:
-    def __init__(self, results_dir="results_GRPO_70B_ckpt400_sampling", resolution=512):
+    def __init__(self, results_dir="results_GRPO_70B", resolution=256):
         """
         Initialize the diversity metric generator.
         
@@ -16,28 +17,39 @@ class DiversityMetricGenerator:
             results_dir (str): Name of the results directory to process
             resolution (int): Resolution for generated images
         """
-        self.results_dir = results_dir
+        self.results_dir = Path(results_dir).name
         self.resolution = resolution
         self.visualizer = HouseDiffusionVisualizerDS2D(resolution=resolution)
+        self.direct_visualizer = DirectVisualizer(resolution=resolution)
         
         # Set up paths - save in project root under results_diversity
         if Path(results_dir).exists():
             # Running from project root
-            self.source_path = Path(f"{results_dir}/generations/rplan_8_70B/full_prompt")
+            self.source_path = Path(f"{results_dir}")
         else:
             # Running from elsewhere
-            self.source_path = Path(f"../../../{results_dir}/generations/rplan_8_70B/full_prompt")
+            self.source_path = Path(f"../../../{results_dir}")
             
-        # Save results in project root under results_diversity
-        self.diversity_base = Path("final_results") / results_dir
-        self.generated_path = self.diversity_base / "generated"
-        self.generated_svg_path = self.diversity_base / "generated_svg"
-        self.ground_truth_path = self.diversity_base / "ground_truth"
+        # Save results in project root under final_results with organized folders
+        self.diversity_base = Path("final_results") / self.results_dir
+        
+        # HouseDiffusion visualizations
+        self.housediffusion_base = self.diversity_base / "housediffusion_viz"
+        self.generated_path = self.housediffusion_base / "generated"
+        self.generated_svg_path = self.housediffusion_base / "generated_svg"
+        self.ground_truth_path = self.housediffusion_base / "ground_truth"
+        
+        # Direct visualizations
+        self.direct_viz_base = self.diversity_base / "direct_viz"
+        self.direct_generated_path = self.direct_viz_base / "generated"
+        self.direct_ground_truth_path = self.direct_viz_base / "ground_truth"
         
         # Create directories if they don't exist
         self.generated_path.mkdir(parents=True, exist_ok=True)
         self.generated_svg_path.mkdir(parents=True, exist_ok=True)
         self.ground_truth_path.mkdir(parents=True, exist_ok=True)
+        self.direct_generated_path.mkdir(parents=True, exist_ok=True)
+        self.direct_ground_truth_path.mkdir(parents=True, exist_ok=True)
         
     def process_single_sample(self, sample_dir, sample_id):
         """
@@ -55,28 +67,30 @@ class DiversityMetricGenerator:
             return
         
         try:
-            # Generate PNG image for the generated floorplan
+            # Load the generated floorplan data
+            with open(generated_json, 'r') as f:
+                generated_data = json.load(f)
+            
+            # Generate HouseDiffusion PNG image for the generated floorplan
             output_path = self.generated_path / f"{sample_id}.png"
             img = self.visualizer.visualize_floorplan_ds2d(
                 str(generated_json),
                 save_path=str(output_path),
                 save_svg=False,
-                show_edges=False
+                # show_edges=False
             )
             
-            # Generate SVG image for the generated floorplan
+            # Generate HouseDiffusion SVG image for the generated floorplan
             svg_output_path = self.generated_svg_path / f"{sample_id}.svg"
             svg_img = self.visualizer.visualize_floorplan_ds2d(
                 str(generated_json),
                 save_path=str(svg_output_path),
                 save_svg=True,
-                show_edges=False
+                # show_edges=False
             )
             
-            # if img is not None:
-            #     print(f"✅ Generated visualization for sample {sample_id}")
-            # else:
-            #     print(f"❌ Failed to generate visualization for sample {sample_id}")
+            # Generate Direct visualization for the generated floorplan
+            self.direct_visualizer.generate_and_save_visualization(generated_data, str(self.direct_generated_path / f"{sample_id}.png"))
                 
             # Process ground truth if available in analysis directory
             if analysis_dir.exists():
@@ -87,8 +101,8 @@ class DiversityMetricGenerator:
                             gt_data = json.load(f)
                         
                         # Check if ground truth has the expected format
-                        # The sample.json already has "spaces" at the top level
                         if "spaces" in gt_data:
+                            # HouseDiffusion ground truth visualization
                             gt_output_path = self.ground_truth_path / f"{sample_id}.png"
                             gt_img = self.visualizer.visualize_floorplan_ds2d(
                                 str(ground_truth_json),
@@ -97,10 +111,8 @@ class DiversityMetricGenerator:
                                 show_edges=False
                             )
                             
-                            # if gt_img is not None:
-                            #     print(f"✅ Generated ground truth visualization for sample {sample_id}")
-                            # else:
-                            #     print(f"❌ Failed to generate ground truth visualization for sample {sample_id}")
+                            # Direct ground truth visualization
+                            self.direct_visualizer.generate_and_save_visualization(gt_data, str(self.direct_ground_truth_path / f"{sample_id}.png"))
                         else:
                             print(f"Warning: Ground truth data for sample {sample_id} doesn't have 'spaces' key")
                         
@@ -112,6 +124,7 @@ class DiversityMetricGenerator:
         except Exception as e:
             print(f"❌ Error processing sample {sample_id}: {e}")
     
+
     def generate_diversity_metrics(self, max_samples=None):
         """
         Generate diversity metrics by processing all available samples.
@@ -131,30 +144,39 @@ class DiversityMetricGenerator:
             sample_dirs = sample_dirs[:max_samples]
         
         print(f"🏠 Processing {len(sample_dirs)} samples from {self.source_path}")
-        print(f"📁 Saving generated images to: {self.generated_path}")
-        print(f"📁 Saving generated SVG files to: {self.generated_svg_path}")
-        print(f"📁 Saving ground truth images to: {self.ground_truth_path}")
+        print(f"📁 HouseDiffusion visualizations:")
+        print(f"   - Generated images: {self.generated_path}")
+        print(f"   - Generated SVG files: {self.generated_svg_path}")
+        print(f"   - Ground truth images: {self.ground_truth_path}")
+        print(f"📁 Direct visualizations:")
+        print(f"   - Generated images: {self.direct_generated_path}")
+        print(f"   - Ground truth images: {self.direct_ground_truth_path}")
         
         # Process each sample
         processed = 0
         for sample_dir in tqdm(sample_dirs, desc="Processing samples", unit="sample"):
             sample_id = sample_dir.name
-            # print(f"Processing sample {sample_id} ({processed + 1}/{len(sample_dirs)})")
             self.process_single_sample(sample_dir, sample_id)
             processed += 1
         
         print(f"\n🎉 Diversity metric generation complete!")
-        print(f"📊 Generated images saved in: {self.diversity_base}")
+        print(f"📊 All visualizations saved in: {self.diversity_base}")
         
         # Print summary statistics
-        generated_count = len(list(self.generated_path.glob("*.png")))
-        svg_count = len(list(self.generated_svg_path.glob("*.svg")))
-        gt_count = len(list(self.ground_truth_path.glob("*.png")))
+        hd_generated_count = len(list(self.generated_path.glob("*.png")))
+        hd_svg_count = len(list(self.generated_svg_path.glob("*.svg")))
+        hd_gt_count = len(list(self.ground_truth_path.glob("*.png")))
+        direct_generated_count = len(list(self.direct_generated_path.glob("*.png")))
+        direct_gt_count = len(list(self.direct_ground_truth_path.glob("*.png")))
         
         print(f"📈 Summary:")
-        print(f"   - Generated visualizations (PNG): {generated_count}")
-        print(f"   - Generated visualizations (SVG): {svg_count}")
-        print(f"   - Ground truth visualizations: {gt_count}")
+        print(f"   HouseDiffusion Visualizations:")
+        print(f"     - Generated (PNG): {hd_generated_count}")
+        print(f"     - Generated (SVG): {hd_svg_count}")
+        print(f"     - Ground truth: {hd_gt_count}")
+        print(f"   Direct Visualizations:")
+        print(f"     - Generated: {direct_generated_count}")
+        print(f"     - Ground truth: {direct_gt_count}")
         print(f"   - Total samples processed: {processed}")
 
 def compute_fid_score(generated_path, ground_truth_path, device="cuda" if torch.cuda.is_available() else "cpu"):
@@ -207,16 +229,15 @@ def compute_fid_score(generated_path, ground_truth_path, device="cuda" if torch.
         print(f"❌ Error computing FID score: {e}")
         return None
 
-
-def save_diversity_results(generator, fid_score, generated_count, gt_count, processed_count):
+def save_diversity_results(generator, fid_scores, generated_counts, gt_counts, processed_count):
     """
     Save diversity metric results to a JSON file.
     
     Args:
         generator (DiversityMetricGenerator): The generator instance with paths
-        fid_score (float): The computed FID score
-        generated_count (int): Number of generated images
-        gt_count (int): Number of ground truth images
+        fid_scores (dict): The computed FID scores for different visualization types
+        generated_counts (dict): Number of generated images per visualization type
+        gt_counts (dict): Number of ground truth images per visualization type
         processed_count (int): Number of samples processed
     """
     # Get SVG count
@@ -224,19 +245,31 @@ def save_diversity_results(generator, fid_score, generated_count, gt_count, proc
     
     results = {
         "timestamp": datetime.now().isoformat(),
-        "fid_score": fid_score,
+        "fid_scores": fid_scores,
         "results_directory": generator.results_dir,
         "resolution": generator.resolution,
         "statistics": {
-            "generated_images": generated_count,
-            "generated_svg_files": svg_count,
-            "ground_truth_images": gt_count,
+            "housediffusion": {
+                "generated_images": generated_counts.get("housediffusion", 0),
+                "generated_svg_files": svg_count,
+                "ground_truth_images": gt_counts.get("housediffusion", 0)
+            },
+            "direct": {
+                "generated_images": generated_counts.get("direct", 0),
+                "ground_truth_images": gt_counts.get("direct", 0)
+            },
             "samples_processed": processed_count
         },
         "paths": {
-            "generated_images": str(generator.generated_path),
-            "generated_svg_files": str(generator.generated_svg_path),
-            "ground_truth_images": str(generator.ground_truth_path),
+            "housediffusion": {
+                "generated_images": str(generator.generated_path),
+                "generated_svg_files": str(generator.generated_svg_path),
+                "ground_truth_images": str(generator.ground_truth_path)
+            },
+            "direct": {
+                "generated_images": str(generator.direct_generated_path),
+                "ground_truth_images": str(generator.direct_ground_truth_path)
+            },
             "source_data": str(generator.source_path)
         }
     }
@@ -252,7 +285,6 @@ def save_diversity_results(generator, fid_score, generated_count, gt_count, proc
         print(f"❌ Error saving results to JSON: {e}")
         return False
 
-
 def main():
     """Main function to run the diversity metric generation."""
     if len(sys.argv) < 2:
@@ -267,22 +299,56 @@ def main():
     
     generator.generate_diversity_metrics() 
     
-    generated_count = len(list(generator.generated_path.glob("*.png")))
-    gt_count = len(list(generator.ground_truth_path.glob("*.png")))
+    # Get counts for both visualization types
+    hd_generated_count = len(list(generator.generated_path.glob("*.png")))
+    hd_gt_count = len(list(generator.ground_truth_path.glob("*.png")))
+    direct_generated_count = len(list(generator.direct_generated_path.glob("*.png")))
+    direct_gt_count = len(list(generator.direct_ground_truth_path.glob("*.png")))
     
-    fid_score = compute_fid_score(
+    # Compute FID scores for both visualization types
+    print(f"\n🔍 Computing FID scores for both visualization types...")
+    
+    hd_fid_score = compute_fid_score(
         generated_path=generator.generated_path,
         ground_truth_path=generator.ground_truth_path
     )
     
-    if fid_score is not None:
-        print(f"\n🎯 Final FID Score: {fid_score:.4f}")
-        print(f"💡 Lower FID scores indicate better image quality and similarity to real data")
+    direct_fid_score = compute_fid_score(
+        generated_path=generator.direct_generated_path,
+        ground_truth_path=generator.direct_ground_truth_path
+    )
+    
+    fid_scores = {
+        "housediffusion": hd_fid_score,
+        "direct": direct_fid_score
+    }
+    
+    generated_counts = {
+        "housediffusion": hd_generated_count,
+        "direct": direct_generated_count
+    }
+    
+    gt_counts = {
+        "housediffusion": hd_gt_count,
+        "direct": direct_gt_count
+    }
+    
+    # Print results
+    print(f"\n🎯 Final FID Scores:")
+    if hd_fid_score is not None:
+        print(f"   HouseDiffusion: {hd_fid_score:.4f}")
     else:
-        print("\n❌ Could not compute FID score")
+        print(f"   HouseDiffusion: Could not compute")
+        
+    if direct_fid_score is not None:
+        print(f"   Direct: {direct_fid_score:.4f}")
+    else:
+        print(f"   Direct: Could not compute")
+        
+    print(f"💡 Lower FID scores indicate better image quality and similarity to real data")
     
     processed_count = len([d for d in generator.source_path.iterdir() if d.is_dir() and d.name.isdigit()])
-    save_diversity_results(generator, fid_score, generated_count, gt_count, processed_count)
+    save_diversity_results(generator, fid_scores, generated_counts, gt_counts, processed_count)
 
 if __name__ == "__main__":
     main()

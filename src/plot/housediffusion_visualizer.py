@@ -94,7 +94,7 @@ class HouseDiffusionVisualizerDS2D:
         # Calculate scale and offset to fit in [0, 1] range first
         width = max_x - min_x
         height = max_y - min_y
-        scale = 0.9 / max(width, height)  # Leave some margin, fit to [0,1] range
+        scale = 0.8 / max(width, height)  # Leave some margin, fit to [0,1] range
         
         center_x = (min_x + max_x) / 2
         center_y = (min_y + max_y) / 2
@@ -206,7 +206,7 @@ class HouseDiffusionVisualizerDS2D:
             if room_type in self.ID_COLOR:
                 draw_color.append(drawsvg.Lines(*np.array(poly).flatten().tolist(), 
                                               close=True, fill=self.ID_COLOR[room_type], 
-                                              fill_opacity=1.0, stroke='black', stroke_width=1))
+                                              fill_opacity=1.0, stroke='black', stroke_width=1.0))
                 
                 # Add corner points if requested (exact same as original)
                 if show_edges:
@@ -222,7 +222,7 @@ class HouseDiffusionVisualizerDS2D:
             room_type = c
             if room_type in self.ID_COLOR:
                 # Use different stroke width for doors vs walls
-                stroke_width = 2 if room_type in [11, 12] else 1  # Thicker for doors
+                stroke_width = 1  # Thicker for doors
                 draw_color.append(drawsvg.Lines(*np.array(poly).flatten().tolist(), 
                                               close=True, fill=self.ID_COLOR[room_type], 
                                               fill_opacity=1.0, stroke='black', stroke_width=stroke_width))

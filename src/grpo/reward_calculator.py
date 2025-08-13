@@ -31,10 +31,10 @@ class RewardCalculator:
             self._cache["key"] = key
         return self._cache["stats"]
 
-    def _linear_reward(self, value: float, target: float = 1.0, round_digits: int = 4) -> float:
-        diff = abs(value - target)
-        reward = 1.0 if diff == 0.0 else max(0.0, 1.0 - diff)
-        return round(reward, round_digits)
+    # def _linear_reward(self, value: float, target: float = 1.0, round_digits: int = 4) -> float:
+    #     diff = abs(value - target)
+    #     reward = 1.0 if diff == 0.0 else max(0.0, 1.0 - diff)
+    #     return round(reward, round_digits)
 
     # def _valid_or_zero(self, stat: Dict[str, Any], fn: Callable[[Dict[str, Any]], float]) -> float:
     #     return fn(stat) if stat.get("is_valid_json", False) else 0.0
@@ -52,6 +52,11 @@ class RewardCalculator:
         if self._is_valid_json(stat) and self._is_non_overlap(stat):
             return self._normalize_reward(fn(stat))
         return 0.0
+    
+    # def _conditional_reward_valid_json(self, stat: Dict[str, Any], fn: Callable[[Dict[str, Any]], float]) -> float:
+    #     if self._is_valid_json(stat):
+    #         return self._normalize_reward(fn(stat))
+    #     return 0.0
 
     # def json_validity(self, completions: List[Any], **kwargs: Any) -> List[float]:
     #     stats = self._compute_stats(completions, **kwargs)
@@ -68,23 +73,10 @@ class RewardCalculator:
     #     ]
     #     return rewards
 
-    def total_area(self, completions: List[Any], **kwargs: Any) -> List[float]:
-        stats = self._compute_stats(completions, **kwargs)
-        rewards = [
-            # self._valid_or_zero(
-            self._conditional_reward(
-                s,
-                lambda st: self._linear_reward(st.get("total_area", 0.0))
-            )
-            for s in stats
-        ]
-        return rewards
-
     # def is_overlap(self, completions: List[Any], **kwargs: Any) -> List[float]:
     #     stats = self._compute_stats(completions, **kwargs)
     #     rewards = [
-    #         # self._valid_or_zero(
-    #         self._valid_or_zero(
+    #         self._conditional_reward_valid_json(
     #             s,
     #             lambda st: 1.0 if not st.get("is_overlap", True) else 0.0
     #         )
@@ -92,9 +84,23 @@ class RewardCalculator:
     #     ]
     #     return rewards
 
+    def total_area(self, completions: List[Any], **kwargs: Any) -> List[float]:
+        stats = self._compute_stats(completions, **kwargs)
+        rewards = [
+            # self._conditional_reward_valid_json(
+            self._conditional_reward(
+                s,
+                # lambda st: self._linear_reward(st.get("total_area", 0.0))
+                lambda st: st.get("total_area", 0.0)        
+            )
+            for s in stats
+        ]
+        return rewards
+
     def compatibility(self, completions: List[Any], **kwargs: Any) -> List[float]:
         stats = self._compute_stats(completions, **kwargs)
         rewards = [
+            # self._conditional_reward_valid_json(
             self._conditional_reward(
                 s,
                 lambda st: st.get("compatibility", 0.0)
@@ -107,7 +113,7 @@ class RewardCalculator:
         return [
             # self.json_validity,
             # self.room_count,
-            self.total_area,
             # self.is_overlap,
+            self.total_area,
             self.compatibility
         ]

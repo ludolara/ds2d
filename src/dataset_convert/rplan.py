@@ -19,7 +19,7 @@ class RPLANConverter:
     """
     Convert raw RPLAN housegan JSON into a Hugging Face DatasetDict.
     """
-    round_value: int = 1
+    round_value: int = 2
     original_map = RPLAN_ROOM_CLASS
     room_map: Dict[int, str] = field(init=False)
     pixel_to_meter: float = field(init=False)
@@ -29,7 +29,7 @@ class RPLANConverter:
         # reverse original_map to map code → name
         self.room_map = {code: name for name, code in self.original_map.items()}
         # 18m × 18m house over 256px
-        self.pixel_to_meter = 18 / 256
+        # self.pixel_to_meter = 18 / 256
 
     def _map_room_type(self, code: int) -> str:
         return self.room_map.get(code, str(code))
@@ -69,7 +69,8 @@ class RPLANConverter:
             if rm_idxs:
                 temp[rm_idxs[0]]["segments"].append(seg)
 
-        total_area = 0.0
+        # total_area = 0.0
+        total_area = 0
         spaces = []
         for room in temp:
             segs = room.pop("segments", [])
@@ -77,24 +78,38 @@ class RPLANConverter:
                 return None
             try:
                 poly = self._segments_to_polygon(segs)
-                poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0,0))
-                area = round(poly.area, self.round_value)
-                minx, miny, maxx, maxy = poly.bounds
+                # poly = scale(poly, xfact=self.pixel_to_meter, yfact=self.pixel_to_meter, origin=(0,0))
+                # area = round(poly.area, self.round_value)
+                # minx, miny, maxx, maxy = poly.bounds
+                # is_rectangular = (len(poly.exterior.coords) - 1) == 4
+
+                # room_data = {
+                #     **room,
+                #     "area": area,
+                #     "width": round(maxx - minx, self.round_value) if is_rectangular else 0,
+                #     "height": round(maxy - miny, self.round_value) if is_rectangular else 0,
+                #     "floor_polygon": [
+                #         {"x": round(x, self.round_value), "y": round(y, self.round_value)}
+                #         for x, y in poly.exterior.coords[:-1]
+                #     ]
+                # }
+                area = int(poly.area)
+                minx, miny, maxx, maxy = int(poly.bounds[0]), int(poly.bounds[1]), int(poly.bounds[2]), int(poly.bounds[3])
                 is_rectangular = (len(poly.exterior.coords) - 1) == 4
 
                 room_data = {
                     **room,
                     "area": area,
-                    "width": round(maxx - minx, self.round_value) if is_rectangular else 0,
-                    "height": round(maxy - miny, self.round_value) if is_rectangular else 0,
+                    "width": int(maxx - minx) if is_rectangular else 0,
+                    "height": int(maxy - miny) if is_rectangular else 0,
                     "floor_polygon": [
-                        {"x": round(x, self.round_value), "y": round(y, self.round_value)}
+                        {"x": int(x), "y": int(y)}
                         for x, y in poly.exterior.coords[:-1]
                     ]
                 }
                 
                 spaces.append(room_data)
-                if room["room_type"] not in ["interior_door"]:
+                if room["room_type"] not in ["interior_door", "front_door"]:
                     total_area += area
             except Exception as e:
                 print(f"Error processing segments for room {room['id']}: {e}")
@@ -134,7 +149,8 @@ class RPLANConverter:
         input_data = {
             "input": {
                 "room_count": len(only_rooms) - 1,
-                "total_area": round(total_area, self.round_value),
+                # "total_area": round(total_area, self.round_value),
+                "total_area": int(total_area),
                 "spaces": input_rooms,
                 "input_graph": input_graph
             }
@@ -143,7 +159,8 @@ class RPLANConverter:
         return {
             "rplan_id": data.get("rplan_id"),
             "room_count": len(only_rooms) - 1,
-            "total_area": round(total_area, self.round_value),
+            # "total_area": round(total_area, self.round_value),
+            "total_area": int(total_area),
             "input_graph": json.dumps(input_graph),
             "spaces": spaces,
             "prompt": json.dumps(input_data)
@@ -162,6 +179,7 @@ class RPLANConverter:
             target_room_plans = [item for item in converted if item["room_count"] == self.room_number]
             other_plans = [item for item in converted if item["room_count"] != self.room_number]
             test, val = train_test_split(target_room_plans, test_size=0.5, shuffle=True)
+            random.seed(84)
             random.shuffle(other_plans)
             train = other_plans
 
@@ -189,7 +207,7 @@ if __name__ == "__main__":
         print(f"Processing rplan_{room_number}")
         converter = RPLANConverter(room_number=room_number)
         ds = converter("datasets/rplan_json")
-        ds.save_to_disk(f"datasets/final/rplan_{room_number}")
+        ds.save_to_disk(f"datasets/final_2/rplan_{room_number}")
         print(f"Saved rplan_{room_number}")
         print(ds)
         print("Train sample:", ds["train"][0])
