@@ -8,7 +8,6 @@ from src.utils import build_prompt
 from src.pred.feedback_generator import FeedbackGenerator
 from src.pred.extract_output_json import extract_output_json
 from datasets import load_from_disk
-# from src.utils.constants import SYSTEM_PROMPT, SYSTEM_RE_PROMPT
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
 
@@ -59,8 +58,8 @@ class FloorplanGenerator:
                 max_tokens=self.max_new_tokens,
                 temperature=0.7,
                 top_p=0.9,
-                n=10,
-                best_of=10
+                n=100,
+                best_of=100
             )
         else:
             self.sampling_params = SamplingParams(
@@ -82,29 +81,6 @@ class FloorplanGenerator:
                 print("Invalid test_range format. Expected format: 'start,end' (e.g., '1,101').")
         self.total_examples = len(self.dataset)
         os.makedirs(self.output_dir, exist_ok=True)
-    
-    # def _select_least(self, candidates, input_prompt):
-    #     """
-    #     Return the candidate minimizing first total_overlap_area,
-    #     then compatibility_score.
-    #     """
-    #     def _key(cand):
-    #         output = extract_output_json(cand.text)
-    #         analysis = FeedbackGenerator.analyze(output, input_prompt)
-    #         overlap = analysis.get('total_overlap_area', float('inf'))
-
-    #         try:
-    #             input_graph = RPLANGraph.from_ds2d(output)
-    #             expected_graph = RPLANGraph.from_labeled_adjacency(
-    #                 input_prompt.get("input_graph", {})
-    #             )
-    #             compatibility_score = input_graph.compatibility_score(expected_graph)
-    #         except Exception:
-    #             compatibility_score = float('inf')
-
-    #         return (overlap, compatibility_score)
-
-    #     return min(candidates, key=_key)
     
     def _select_least(self, candidates, input_prompt):
         """

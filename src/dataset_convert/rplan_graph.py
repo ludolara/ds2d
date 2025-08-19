@@ -62,41 +62,42 @@ class RPLANGraph:
 
     @classmethod
     def from_ds2d(cls, data: Dict[str,Any], gap_threshold: float = 0.2, boundary_tolerance: float = 0.3, overlap_threshold: float = 0.3) -> "RPLANGraph":
+    # def from_ds2d(cls, data: Dict[str,Any], gap_threshold: float = 2, boundary_tolerance: float = 3, overlap_threshold: float = 0.3) -> "RPLANGraph":
         inst = cls(data)  # Store the original data
         room_polys = {}
         door_polys = {}
         name_to_int = {v:k for k,v in ROOM_CLASS.items()}
-        
+
         # Validate data structure
         if not isinstance(data, dict) or "spaces" not in data:
             print(f"ERROR: from_ds2d data is malformed: {data}")
             inst.door_idxs = set()
             inst.graph = nx.Graph()
             return inst
-            
+
         spaces = data["spaces"]
         if not isinstance(spaces, list):
             print(f"ERROR: from_ds2d spaces is not a list: {spaces}")
             inst.door_idxs = set()
             inst.graph = nx.Graph()
             return inst
-        
+
         for idx, item in enumerate(spaces):
             # Validate item is a dictionary
             if not isinstance(item, dict):
                 print(f"ERROR: from_ds2d room {idx} is not a dict: {item}")
                 continue
-                
+
             # Validate required keys exist
             if "floor_polygon" not in item or "room_type" not in item:
                 print(f"ERROR: from_ds2d room {idx} missing required keys: {item}")
                 continue
-                
+
             floor_polygon = item["floor_polygon"]
             if not isinstance(floor_polygon, list):
                 print(f"ERROR: from_ds2d room {idx} floor_polygon is not a list: {floor_polygon}")
                 continue
-            
+
             try:
                 coords = []
                 for pt_idx, pt in enumerate(floor_polygon):
@@ -104,10 +105,10 @@ class RPLANGraph:
                         print(f"ERROR: from_ds2d room {idx} point {pt_idx} is malformed: {pt}")
                         break
                     coords.append((pt["x"], pt["y"]))
-                
+
                 if len(coords) != len(floor_polygon):
                     continue  # Skip this room if any points were invalid
-                    
+
                 poly = Polygon(coords)
                 if item["room_type"] == "interior_door":
                     door_polys[idx] = poly
@@ -121,31 +122,31 @@ class RPLANGraph:
         for idx in room_polys:
             rt_int = name_to_int.get(data["spaces"][idx]["room_type"], name_to_int["unknown"])
             G.add_node(idx, room_type=rt_int)
-        
+
         # Track door connections to detect multiple doors between same rooms
         door_connections = defaultdict(list)
-        
+
         for door_idx, door_poly in door_polys.items():
             buf = door_poly.buffer(gap_threshold)
             touching = [i for i,p in room_polys.items() if buf.intersects(p)]
-            
+
             for a,b in combinations(touching, 2):
                 # Validation 1: Check if the door is close to the gap between the two spaces
                 room_a_poly = room_polys[a]
                 room_b_poly = room_polys[b]
-                
+
                 # Check if door is close to both room boundaries (more tolerant approach)
                 door_centroid = door_poly.centroid
                 dist_to_a = room_a_poly.boundary.distance(door_centroid)
                 dist_to_b = room_b_poly.boundary.distance(door_centroid)
-                
+
                 # Door should be close to both room boundaries
                 if dist_to_a > boundary_tolerance or dist_to_b > boundary_tolerance:
                     continue  # Skip if door is too far from either room boundary
-                
+
                 # Validation 2: Check if door significantly overlaps with room interiors
                 door_area = door_poly.area
-                
+
                 valid_connection = True
                 for room_poly in room_polys.values():
                     if door_poly.overlaps(room_poly):
@@ -154,24 +155,24 @@ class RPLANGraph:
                         if overlap_ratio > overlap_threshold:
                             valid_connection = False
                             break
-                
+
                 if not valid_connection:
                     continue  # Skip this connection if door overlaps significantly with any room
-                
+
                 # Validation 3: Check if one room is contained within the other (invalid connection)
                 if room_a_poly.contains(room_b_poly) or room_b_poly.contains(room_a_poly):
                     continue  # Skip if one room is completely inside the other
-                
+
                 # Track this door connection
                 room_pair = tuple(sorted([a, b]))
                 door_connections[room_pair].append(door_idx)
-        
+
         # Only add connections for room pairs that have exactly one door
         for room_pair, door_list in door_connections.items():
             if len(door_list) == 1:  # Only connect if exactly one door
                 a, b = room_pair
                 G.add_edge(a, b)
-        
+
         # Handle front_door connections (special case: floating door connecting to one room)
         front_door_idxs = [idx for idx in room_polys.keys() if data["spaces"][idx]["room_type"] == "front_door"]
         for fd_idx in front_door_idxs:
@@ -179,21 +180,21 @@ class RPLANGraph:
             # Find the closest room to connect the front_door to
             closest_room = None
             min_distance = float('inf')
-            
+
             for room_idx, room_poly in room_polys.items():
                 if room_idx == fd_idx or data["spaces"][room_idx]["room_type"] == "front_door":
                     continue  # Skip self and other front_doors
-                
+
                 # Calculate distance from front_door to room boundary
                 distance = fd_poly.distance(room_poly)
                 if distance < min_distance and distance < boundary_tolerance:
                     min_distance = distance
                     closest_room = room_idx
-            
+
             # Connect front_door to the closest room
             if closest_room is not None:
                 G.add_edge(fd_idx, closest_room)
-        
+
         inst.graph = G
         return inst
 
@@ -256,66 +257,67 @@ class RPLANGraph:
             edge = tuple(sorted((base_u, base_v)))
             cnt[edge] += 1
         return cnt
-    
+
     def _count_front_doors(self, graph: nx.Graph) -> int:
         """Helper method to count front door nodes"""
         return sum(1 for n in graph.nodes() if graph.nodes[n]['room_type'] == 15)
-    
+
     def _count_floating_interior_doors_from_ds2d(self, data: Dict[str, Any]) -> int:
         """Helper method to count floating interior doors from DS2D data"""
         if not isinstance(data, dict) or "spaces" not in data:
             return 0
-            
+
         spaces = data["spaces"]
         if not isinstance(spaces, list):
             return 0
-        
+
         floating_count = 0
-        
+
         # Find all interior doors
         door_polys = {}
         room_polys = {}
-        
+
         for idx, item in enumerate(spaces):
             if not isinstance(item, dict) or "floor_polygon" not in item or "room_type" not in item:
                 continue
-                
+
             floor_polygon = item["floor_polygon"]
             if not isinstance(floor_polygon, list):
                 continue
-            
+
             try:
                 coords = []
                 for pt in floor_polygon:
                     if not isinstance(pt, dict) or "x" not in pt or "y" not in pt:
                         break
                     coords.append((pt["x"], pt["y"]))
-                
+
                 if len(coords) != len(floor_polygon):
                     continue
-                    
+
                 from shapely.geometry import Polygon
                 poly = Polygon(coords)
-                
+
                 if item["room_type"] == "interior_door":
                     door_polys[idx] = poly
                 else:
                     room_polys[idx] = poly
             except Exception:
                 continue
-        
+
         # Check each door to see if it's floating
         for door_idx, door_poly in door_polys.items():
             # Count how many rooms this door touches
             touching_rooms = 0
             for room_idx, room_poly in room_polys.items():
                 if door_poly.buffer(0.2).intersects(room_poly):
+                # if door_poly.buffer(2).intersects(room_poly):
                     touching_rooms += 1
-            
+
             # If door touches 0 or 1 room, it's floating
             if touching_rooms <= 1:
                 floating_count += 1
-        
+
         return floating_count
 
     def _get_floating_interior_door_count(self, obj) -> int:
@@ -329,19 +331,14 @@ class RPLANGraph:
         c2 = self._multiset_edges(other.graph)
         all_edges = set(c1.keys()) | set(c2.keys())
         edge_mistakes = sum(abs(c1[e] - c2[e]) for e in all_edges)
-        
-        # Add front_door count differences
-        fd1 = self._count_front_doors(self.graph)
-        fd2 = self._count_front_doors(other.graph)
-        front_door_mistakes = abs(fd1 - fd2)
-        
+
         # Add floating interior door penalties
         floating1 = self._get_floating_interior_door_count(self)
         floating2 = self._get_floating_interior_door_count(other)
         floating_penalty = floating1 + floating2  # Penalize each floating door by 1
-        
-        return edge_mistakes + front_door_mistakes + floating_penalty
-    
+
+        return edge_mistakes + floating_penalty
+
     def compatibility_score_scaled(self, other: "RPLANGraph") -> float:
         c1 = self._multiset_edges(self.graph)
         c2 = self._multiset_edges(other.graph)
@@ -349,33 +346,27 @@ class RPLANGraph:
 
         edge_mismatches = sum(abs(c1[e] - c2[e]) for e in all_edges)
         edge_total = sum(max(c1[e], c2[e]) for e in all_edges)
-        
-        # Add front_door count differences
-        fd1 = self._count_front_doors(self.graph)
-        fd2 = self._count_front_doors(other.graph)
-        front_door_mismatches = abs(fd1 - fd2)
-        front_door_total = max(fd1, fd2)
-        
+
         # Add floating interior door penalties
         floating1 = self._get_floating_interior_door_count(self)
         floating2 = self._get_floating_interior_door_count(other)
         floating_penalty = floating1 + floating2  # Penalize each floating door by 1
-        
-        total_mismatches = edge_mismatches + front_door_mismatches + floating_penalty
-        total_elements = edge_total + front_door_total + floating1 + floating2
-        
+
+        total_mismatches = edge_mismatches + floating_penalty
+        total_elements = edge_total + floating1 + floating2
+
         if total_elements == 0:
             return 1.0
         return 1.0 - total_mismatches / total_elements
-        
+
     def draw(self, title: str = "Input Graph", seed: int = 42) -> None:
         import matplotlib.pyplot as plt
         pos = nx.spring_layout(self.graph, seed=seed)
-        
+
         # Separate front_door nodes from other nodes
         front_door_nodes = [n for n in self.graph.nodes() if self.graph.nodes[n]["room_type"] == 15]
         other_nodes = [n for n in self.graph.nodes() if self.graph.nodes[n]["room_type"] != 15]
-        
+
         # Draw other nodes first
         if other_nodes:
             nx.draw_networkx_nodes(
@@ -385,7 +376,7 @@ class RPLANGraph:
                 node_color=[self.cmap[self.graph.nodes[n]["room_type"]] for n in other_nodes],
                 node_size=300,
             )
-        
+
         # Draw front_door nodes with black border
         if front_door_nodes:
             nx.draw_networkx_nodes(
@@ -397,7 +388,7 @@ class RPLANGraph:
                 edgecolors='black',
                 linewidths=2,
             )
-        
+
         nx.draw_networkx_edges(self.graph, pos, width=2)
         plt.title(title)
         plt.axis("off")
