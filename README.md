@@ -16,15 +16,14 @@ This repo expects RPLAN converted to HouseGAN++ JSON first, then to a Hugging Fa
 
 - **Step 2: Convert rasters to JSON with the HouseGAN data reader** https://github.com/sepidsh/Housegan-data-reader
 
-- **Step 3: Convert HouseGAN JSONs to HF `DatasetDict`**
-  - Use the `RPLANConverter` in `src/dataset_convert/rplan.py`.
-
 Resulting folder structure:
 
 ```text
 datasets/
   rplan_json/               
 ```
+
+- **Step 3: Convert HouseGAN JSONs to HF `DatasetDict`**
 
 ```bash
 python src/dataset_convert/rplan.py
@@ -78,7 +77,7 @@ Flags of interest:
 - `--dataset`: dataset folder 
 
 
-- Note: Rewards implemented in `src/grpo/reward_calculator.py`.
+Note: Rewards implemented in `src/grpo/reward_calculator.py`.
 
 ---
 
