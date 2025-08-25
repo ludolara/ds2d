@@ -14,18 +14,25 @@ This repo expects RPLAN converted to HouseGAN++ JSON first, then to a Hugging Fa
 
 - **Step 1: Download the RPLAN dataset** via the official request form: https://docs.google.com/forms/d/e/1FAIpQLSfwteilXzURRKDI5QopWCyOGkeb_CFFbRwtQ0SOPhEg0KGSfw/viewform
 
-  - Then convert rasters to JSON with the HouseGAN data reader: https://github.com/sepidsh/Housegan-data-reader
-- **Step 2: Convert HouseGAN JSONs to HF `DatasetDict`**
+- **Step 2: Convert rasters to JSON with the HouseGAN data reader** https://github.com/sepidsh/Housegan-data-reader
+
+- **Step 3: Convert HouseGAN JSONs to HF `DatasetDict`**
   - Use the `RPLANConverter` in `src/dataset_convert/rplan.py`.
+
+Resulting folder structure:
+
+```text
+datasets/
+  rplan_json/               
+```
 
 ```bash
 python src/dataset_convert/rplan.py
 ```
-Resulting folder structure (examples):
+Resulting folder structure:
 
 ```text
 datasets/
-  rplan_json/                   # HouseGAN JSONs from raster_to_json.py
   rplan_5/                     
     train/
     validation/
@@ -70,7 +77,9 @@ Flags of interest:
 - `--model`: base or SFT checkpoint
 - `--dataset`: dataset folder 
 
-Rewards implemented in `src/grpo/reward_calculator.py`.
+
+- Note: Rewards implemented in `src/grpo/reward_calculator.py`.
+
 ---
 
 ### 3) Inference (vLLM)
