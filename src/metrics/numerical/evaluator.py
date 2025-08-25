@@ -22,7 +22,7 @@ class NumericalEvaluate:
             # ("prompt_total_area_coverage_pct", "Prompt Total Area ↑"),
             ("prompt_room_id_recall_pct", "Room ID ↑"),
             ("prompt_room_area_mape_pct", "Room Area MAPE ↓"),
-            ("prompt_room_area_compliance_pct", "Rooms Area Compliance (10%) ↑"),
+            # ("prompt_room_area_compliance_pct", "Rooms Area Compliance (10%) ↑"),
         ]
 
     def evaluate(self) -> Tuple[Dict[str, Tuple[Optional[float], Optional[float]]], List[int]]:

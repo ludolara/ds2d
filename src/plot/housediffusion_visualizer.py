@@ -33,7 +33,6 @@ class HouseDiffusionVisualizerDS2D:
             "dining_room": 7, 
             "study_room": 8,
             "storage": 9, 
-            # "front_door": 10, 
             "unknown": 16, 
             "front_door": 15,
             "interior_door": 17,
@@ -41,18 +40,33 @@ class HouseDiffusionVisualizerDS2D:
               
         
         # Exact room type color mapping from the original HouseDiffusion system
+        # self.ID_COLOR = {
+        #     1: '#EE4D4D',   
+        #     2: '#C67C7B',    
+        #     3: '#FFD274',    
+        #     4: '#BEBEBE',   
+        #     5: '#BFE3E8',   
+        #     6: '#7BA779',   
+        #     7: '#E87A90',    
+        #     8: '#FF8C69',    
+        #     9: '#1F849B',    
+        #     15: '#727171',   
+        #     17: '#D3A2C7'    
+        # }
+
         self.ID_COLOR = {
-            1: '#EE4D4D',    # Living room
-            2: '#C67C7B',    # Bedroom  
-            3: '#FFD274',    # Kitchen
-            4: '#BEBEBE',    # Bathroom
-            5: '#BFE3E8',    # Balcony
-            6: '#7BA779',    # Corridor
-            7: '#E87A90',    # Dining room
-            8: '#FF8C69',    # Study
-            9: '#1F849B',    # Storage
-            15: '#727171',   
-            17: '#D3A2C7'    
+            1:  '#FF6AD5', # Living room
+            2:  '#966BFF', # Kitchen
+            3:  '#FFDE8B', # Bedroom 
+            4:  '#FFA58B', # Bathroom (orange)
+            5:  '#94D0FF', # Balcony
+            6:  '#A4C639', # Entrance / Corridor
+            7:  '#FFB347', # Dining room 
+            8:  '#C4A484', # Study room 
+            9:  '#FF6A8B', # Storage
+            15: '#444444', # Front door
+            16: '#888888', # Unknown
+            17: '#F1F1F1'  # Interior door
         }
         
         # Door indices from the original system (including interior doors and walls)

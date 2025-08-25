@@ -6,7 +6,7 @@
 #SBATCH --mem=196G
 #SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
-#SBATCH --time=10:59:00
+#SBATCH --time=11:59:00
 #SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
@@ -16,7 +16,7 @@ module load arrow
 module load cuda/12
 source $SCRATCH/env/ds2d/bin/activate
 
-EPOCHS=${1:-2}
+EPOCHS=${1:-3}
 ROOM_NUMBER=${2:-6}
 OUTPUT_DIR="output/final_2/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all/"
 

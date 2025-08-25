@@ -20,9 +20,9 @@ source $SCRATCH/env/vllm/bin/activate
 
 ROOM_NUMBER=${1:-5}
 
-MODEL="models/final/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
-DATASET="datasets/final/rplan_${ROOM_NUMBER}"
-OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_7n"
+MODEL="models/final_2/rplan${ROOM_NUMBER}_r64_a128-Llama-3.3-70B-Instruct"
+DATASET="datasets/final_2/rplan_${ROOM_NUMBER}"
+OUTPUT_DIR="/home/l/luislara/links/projects/aip-pal/luislara/output/rplan${ROOM_NUMBER}_70B_r64_GRPO_7n_2"
 
 NODELIST=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 NUM_NODES=${#NODELIST[@]}
