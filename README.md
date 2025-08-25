@@ -66,7 +66,7 @@ sbatch scripts/train_multi_node.slurm 2 6
 
 #### B) GRPO (Reinforcement, TRL)
 
-Finetune with rewards computed from JSON validity, non-overlap, area, and graph compatibility.
+Finetune with rewards computed from total area and graph compatibility.
 
 Arguments: ROOM_NUMBER
 ```bash
