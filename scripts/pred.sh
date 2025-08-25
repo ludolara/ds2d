@@ -18,7 +18,7 @@ module load arrow
 source $SCRATCH/env/vllm/bin/activate
 
 TEST_RANGE=${1:-"1,1000"}
-ROOM_NUMBER=${2:-7}
+ROOM_NUMBER=${2:-6}
 
 python src/pred/run_generation.py \
     --batch_size 64 \

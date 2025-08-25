@@ -2,7 +2,7 @@ export PYTHONPATH="$PYTHONPATH:/."
 module load python/3.11
 source $SCRATCH/env/vllm/bin/activate
 
-RESULT_FOLDER=${1:-"results/results8_GRPO_70B_fs/"}
+RESULT_FOLDER=${1:-"results/results5_GRPO_70B_fs/"}
 
 echo "Using result folder: $RESULT_FOLDER"
 
