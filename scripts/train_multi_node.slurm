@@ -7,7 +7,6 @@
 #SBATCH --cpus-per-gpu=2
 #SBATCH --gres=gpu:h100:4
 #SBATCH --time=11:59:00
-#SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
 
@@ -18,7 +17,7 @@ source $SCRATCH/env/ds2d/bin/activate
 
 EPOCHS=${1:-3}
 ROOM_NUMBER=${2:-6}
-OUTPUT_DIR="output/final_2/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all/"
+OUTPUT_DIR="output/rplan${ROOM_NUMBER}_${EPOCHS}_70B_r64_a128_all/"
 
 nodes=( $( scontrol show hostnames $SLURM_JOB_NODELIST ) )
 nodes_array=($nodes)
@@ -35,7 +34,7 @@ srun torchrun --nnodes $num_nodes --nproc_per_node 4 --rdzv_id $RANDOM --rdzv_ba
     --peft_method lora \
     --quantization 4bit \
     --model_name models/Llama-3.3-70B-Instruct \
-    --custom_dataset.data_path "datasets/final_2/rplan_${ROOM_NUMBER}" \
+    --custom_dataset.data_path "datasets/rplan_${ROOM_NUMBER}" \
     --custom_dataset.file "src/train/floorplan_dataset.py" \
     --batch_size_training 2 \
     --lora_config.r 64 \

@@ -7,7 +7,6 @@
 #SBATCH --cpus-per-gpu=3
 #SBATCH --gres=gpu:h100:4
 #SBATCH --time=11:59:00
-#SBATCH --account=aip-pal
 
 export PYTHONPATH="$PYTHONPATH:/."
 

@@ -207,7 +207,7 @@ if __name__ == "__main__":
         print(f"Processing rplan_{room_number}")
         converter = RPLANConverter(room_number=room_number)
         ds = converter("datasets/rplan_json")
-        ds.save_to_disk(f"datasets/final_2/rplan_{room_number}")
+        ds.save_to_disk(f"datasets/rplan_{room_number}")
         print(f"Saved rplan_{room_number}")
         print(ds)
         print("Train sample:", ds["train"][0])
