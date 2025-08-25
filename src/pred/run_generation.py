@@ -1,7 +1,6 @@
 import argparse
 import os
 from src.pred.floorplan_generator import FloorplanGenerator
-from src.pred.floorplan_generator_few_shot import FloorplanGenerator as FloorplanGeneratorFewShot
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -26,7 +25,7 @@ def main():
     else:
         os.environ["VLLM_USE_V1"] = "1"
 
-    generator = FloorplanGeneratorFewShot(
+    generator = FloorplanGenerator(
         model_name_or_path=args.model_name_or_path,
         lora_adapter_path=args.lora_adapter_path,
         dataset_name_or_path=args.dataset_name_or_path,

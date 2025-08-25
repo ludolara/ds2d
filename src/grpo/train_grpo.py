@@ -86,20 +86,6 @@ def main():
             BestRewardCallback(early_stopping_patience=args.early_stopping_patience),
         ],
     )
-    
-    # checkpoint_dir = None
-    # if os.path.exists(args.output):
-    #     checkpoint_pattern = os.path.join(args.output, "checkpoint-*")
-    #     checkpoints = glob.glob(checkpoint_pattern)
-    #     if checkpoints:
-    #         latest_checkpoint = max(checkpoints, key=lambda x: int(x.split('-')[-1]))
-    #         checkpoint_dir = latest_checkpoint
-    #         print(f"Resuming from checkpoint: {checkpoint_dir}")
-    #     else:
-    #         print("No checkpoints found, starting fresh training")
-    # else:
-    #     print("Output directory doesn't exist, starting fresh training")
-    # trainer.train(resume_from_checkpoint=checkpoint_dir)
 
     trainer.train()
     trainer.save_model()
